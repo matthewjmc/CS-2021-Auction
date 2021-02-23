@@ -13,26 +13,28 @@ func main() {
 		return
 	}
 	defer stream.Close()
-
+	var count int64 = 1
 	for {
 		con, err := stream.Accept()
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
-		go requestHandle(con)
+		fmt.Println("Conn Number:", count)
+		go requestHandle(con, count)
+		count++
 	}
 
 }
 
-func requestHandle(con net.Conn) {
+func requestHandle(con net.Conn, cnt int64) {
 	for {
 		data, err := bufio.NewReader(con).ReadString('\n')
 		if err != nil {
 			fmt.Println(err)
-			return
+			break
 		}
-		fmt.Println(data)
+		fmt.Println("From", cnt, "-->", data)
 	}
 	con.Close()
 }
