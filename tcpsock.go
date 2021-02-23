@@ -30,7 +30,7 @@ func requestHandle(con net.Conn) {
 		data, err := bufio.NewReader(con).ReadString('\n')
 		if err != nil {
 			fmt.Println(err)
-			return
+			break
 		}
 		fmt.Println(data)
 	}
