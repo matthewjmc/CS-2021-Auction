@@ -5,7 +5,8 @@ import (
 )
 
 func main() {
-	for i := 1; i < 53000; i++ {
+	i := 1
+	for i < 52000 {
 		go spawnConn()
 	}
 }
