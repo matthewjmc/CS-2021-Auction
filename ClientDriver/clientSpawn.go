@@ -18,6 +18,7 @@ func main() {
 		fmt.Println(n)
 		n++
 	}
+	time.Sleep(100000000 * time.Second)
 }
 
 func handleCon(c net.Conn) {
