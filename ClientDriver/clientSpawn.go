@@ -15,6 +15,7 @@ func main() {
 			return
 		}
 		go handleCon(c)
+		fmt.Println(n)
 	}
 }
 
