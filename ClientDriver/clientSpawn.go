@@ -7,17 +7,19 @@ import (
 )
 
 func main() {
-	c, err := net.Dial("tcp", "10.0.59.136:19530")
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
 	for {
-		//reader := bufio.NewReader(os.Stdin)
-		//text, _ := reader.ReadString('\n')
+		c, err := net.Dial("tcp", "10.0.59.136:19530")
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		go handleCon(c)
+	}
+}
 
+func handleCon(c net.Conn) {
+	for {
 		fmt.Fprintf(c, time.Nanosecond.String()+"\n") //Print to server
-
+		time.Sleep(1 * time.Second)
 	}
 }
