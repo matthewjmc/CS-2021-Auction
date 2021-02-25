@@ -7,7 +7,8 @@ import (
 )
 
 func main() {
-	for {
+	n := 1
+	for n < 1000 {
 		c, err := net.Dial("tcp", "10.0.59.136:19530")
 		if err != nil {
 			fmt.Println(err)
