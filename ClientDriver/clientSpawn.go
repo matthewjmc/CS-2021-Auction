@@ -1,20 +1,23 @@
 package main
 
 import (
+	"fmt"
 	"net"
+	"time"
 )
 
 func main() {
-	i := 1
-	for i < 52000 {
-		go spawnConn()
-	}
-}
-
-func spawnConn() {
-	conn, err := net.Dial("tcp", "10.0.59.136:19530")
+	c, err := net.Dial("tcp", "10.0.59.136:19530")
 	if err != nil {
-		panic(err)
+		fmt.Println(err)
+		return
 	}
-	defer conn.Close()
+
+	for {
+		//reader := bufio.NewReader(os.Stdin)
+		//text, _ := reader.ReadString('\n')
+
+		fmt.Fprintf(c, time.Nanosecond.String()+"\n") //Print to server
+
+	}
 }
