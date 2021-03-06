@@ -189,3 +189,5 @@ func updateAuction(b Bid, a Auction) Auction {
 
 	return a
 }
+
+// hihihihi
