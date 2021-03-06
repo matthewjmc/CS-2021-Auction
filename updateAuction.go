@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"reflect"
 	"time"
 )
 
@@ -24,31 +25,17 @@ import (
 ///// Struct is a creation of User Input Data Type.
 
 func main() {
-	var leng, tagun9921, matty User
-	var auction Auction
-	var bid1, bid2, bid3 Bid
+	Tagun := User{
+		firstName: "Tagun",
+		lastName:  "Jivasitthikul",
+		accountID: 1,
+	}
+	var bid1 Bid
+	createBid(bid1, Tagun, 3000, 1)
+	go fmt.Println(updateDB(Tagun))
+	go fmt.Println(updateDB(bid1))
 
-	leng = createUser(leng, "Katisak", "Jiangjaturapat", 111)
-	tagun9921 = createUser(tagun9921, "Tagun", "Jivasitthikul", 222)
-	matty = createUser(matty, "Matthew", "McMullin", 333)
-
-	auction = createAuction(auction, leng, 1)
-
-	bid1 = createBid(bid1, tagun9921, 500, 11)
-	fmt.Println("wait2")
-	auction = updateAuction(bid1, auction)
-	fmt.Println(auction.currMaxBid, auction.currWinnerID)
-
-	bid2 = createBid(bid2, matty, 1000, 22)
-	fmt.Println("wait3")
-	auction = updateAuction(bid2, auction)
-	fmt.Println(auction.currMaxBid, auction.currWinnerID)
-
-	bid3 = createBid(bid3, tagun9921, 2000, 33)
-	fmt.Println("wait4")
-	auction = updateAuction(bid3, auction)
-	fmt.Println(auction.currMaxBid, auction.currWinnerID)
-
+	fmt.Scanln()
 }
 
 type User struct {
@@ -164,30 +151,22 @@ func createBid(bidAction Bid, user User, price uint32, id uint32) Bid {
 	return bidAction
 }
 
-func updateAuction(b Bid, a Auction) Auction {
+/*func updateAuction(b Bid, a Auction) Auction {
+	var difference = b.bidPrice - a.currMaxBid
+	if b.bidPrice > a.currMaxBid && difference >= a.bidStep && b.bidTime.After(a.latestBidTime) {
 
-	if b.bidPrice-a.currMaxBid >= a.bidStep {
-
-		if b.bidPrice > a.currMaxBid {
-
-			if b.bidTime.After(a.latestBidTime) {
-
-				a.currMaxBid = b.bidPrice
-				a.currWinnerID = b.bidderID
-				a.latestBidTime = b.bidTime
-				a.actionCount++
-
-			}
-
-		} else {
-			fmt.Println("The bidded price is lesser than the current bid price")
-		}
-
-	} else {
-		fmt.Println("The bidded price is lesser than the bid step")
 	}
 
-	return a
-}
+}*/
 
 // hihihihi
+
+func updateDB(x interface{}) string {
+	// get the input items to be transferred to the database
+	return reflect.TypeOf(x).String()
+}
+
+func displayAction(x interface{}) string {
+	// get the input items to be transferred to the database
+	return reflect.TypeOf(x).String()
+}
