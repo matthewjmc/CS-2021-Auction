@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
 	"reflect"
 	"time"
 )
@@ -16,91 +17,62 @@ import (
 
 ///// Struct is a creation of User Input Data Type.
 
-/*
-
-Tagun := User{
-		firstName: "Tagun",
-		lastName:  "Jivasitthikul",
-		accountID: 1,
-	}
-	var bid1 Bid
-	createBid(bid1, Tagun, 3000, 1)
-	go fmt.Println(updateDB(Tagun))
-	go fmt.Println(updateDB(bid1))
-
-	fmt.Scanln()
-
-*/
-
 func main() {
+
 	simpleMockTest()
+
 }
 
+// User contains a user's information for every other implementation.
 type User struct {
 	firstName string
 	lastName  string
-	accountID uint32
+	accountID uint64
 }
 
-/*test := User{
-	firstName: "Tagun",
-	lastName:  "Jivasitthikul",
-	accountID: 15235,
-}
-createAuction(test)*/
-
-func createUser(first string, last string, id uint32) User {
-
-	/*username = User{
-		firstName: first,
-		lastName:  last,
-		accountID: 10,
-	}*/
-	/*fmt.Println("This is the account id", username.accountID)
-	fmt.Println("This is the first name", username.firstName)
-	fmt.Println("this is the last name : ", username.lastName)*/
+func createUser(first string, last string, id uint64) User {
 
 	account := User{firstName: first}
 	account.lastName = last
 	account.accountID = id // need some algorithm to uniquely randomize username id.
 
-	/*fmt.Println("This is the account id", username.accountID)
-	fmt.Println("This is the first name", username.firstName)
-	fmt.Println("this is the last name", username.lastName)*/
-
 	return account
 }
 
+// Auction stores all information used to declare the auction current status.
 type Auction struct {
-	auctionID     uint32
-	auctioneerID  uint32
-	itemName      string
-	currWinnerID  uint32
-	currMaxBid    uint32
-	bidStep       uint32
-	latestBidTime time.Time
-	startTime     time.Time
-	endTime       time.Time
-	actionCount   uint32
+	auctionID      uint64
+	auctioneerID   uint64
+	itemName       string
+	currWinnerID   uint64
+	currWinnerName string
+	currMaxBid     uint64
+	bidStep        uint64
+	latestBidTime  time.Time
+	startTime      time.Time
+	endTime        time.Time
+	actionCount    uint64
 }
 
 func createAuction(auctioneer User) Auction {
 
-	var id uint32 = 1111111111
+	//var id uint64 = 1111111111
+	var id = randomize(0, 999999)
 	var itemName string = "test"
-	var initBid uint32 = 200
-	var bidStep uint32 = 50
+	var initBid uint64 = 200
+	var bidStep uint64 = 50
 	var duration time.Duration = 1
+
 	/*
 		var itemName string
 		fmt.Println("Enter your item name for the auction :")
 		fmt.Scanln(&itemName)
 
-		var bidStep uint32
+		var bidStep uint64
 		fmt.Println("Enter your bidding step :")
 		fmt.Scanln(&bidStep)
 
-		var initBid uint32
+		var initBid uint64
 		fmt.Println("Enter your initial starting price :")
 		fmt.Scanln(&initBid)
 
@@ -109,43 +81,49 @@ func createAuction(auctioneer User) Auction {
 		fmt.Scanln(&duration)
 	*/
 
-	auction := Auction{auctionID: id}
+	auction := Auction{}
 	auction = Auction{
-		auctioneerID:  auctioneer.accountID,
-		itemName:      itemName,
-		currWinnerID:  auctioneer.accountID,
-		currMaxBid:    initBid,
-		bidStep:       bidStep,
-		latestBidTime: time.Now(),
-		startTime:     time.Now(),
-		endTime:       time.Now().Add(duration * time.Hour),
-		actionCount:   0,
+		auctionID:      id,
+		auctioneerID:   auctioneer.accountID,
+		itemName:       itemName,
+		currWinnerID:   auctioneer.accountID,
+		currWinnerName: auctioneer.firstName,
+		currMaxBid:     initBid,
+		bidStep:        bidStep,
+		latestBidTime:  time.Now(),
+		startTime:      time.Now(),
+		endTime:        time.Now().Add(duration * time.Hour),
+		actionCount:    0,
 	}
+
 	return auction
 }
 
+// Bid is a datatype used to store bid interactions containing the bidding information.
 type Bid struct {
-	biddingID uint32
-	bidderID  uint32
-	bidPrice  uint32
-	bidTime   time.Time
+	biddingID  uint64
+	bidderID   uint64
+	bidderName string
+	bidPrice   uint64
+	bidTime    time.Time
 }
 
-func createBid(user User, price uint32) Bid {
-	var id uint32 = 2344
+func createBid(user User, price uint64) Bid {
+	id := rand.Uint64()
 	bid := Bid{}
 	bid = Bid{
-		biddingID: id,
-		bidderID:  user.accountID,
-		bidPrice:  price,
-		bidTime:   time.Now(),
+		biddingID:  id,
+		bidderID:   user.accountID,
+		bidderName: user.firstName,
+		bidPrice:   price,
+		bidTime:    time.Now(),
 	}
 	return bid
 }
 
 func updateAuction(b Bid, a Auction) Auction {
 
-	var start time.Time = time.Now()
+	//var start time.Time = time.Now()
 	//fmt.Println("The initial time that the auction update process caused by", b.biddingID, "is being called is", time.Now())
 
 	if b.bidTime.After(a.endTime) {
@@ -153,18 +131,19 @@ func updateAuction(b Bid, a Auction) Auction {
 		return a
 	}
 
-	var difference = b.bidPrice - a.currMaxBid
-	if b.bidPrice > a.currMaxBid && difference >= a.bidStep && b.bidTime.After(a.latestBidTime) {
+	if (b.bidPrice > a.currMaxBid) && (b.bidPrice-a.currMaxBid) >= a.bidStep {
 		a.currMaxBid = b.bidPrice
 		a.currWinnerID = b.bidderID
 		a.latestBidTime = b.bidTime
+		a.currWinnerName = b.bidderName
+		a.actionCount++
 	}
 
-	var end time.Time = time.Now()
+	//var end time.Time = time.Now()
 	//fmt.Println("The final time that the auction update process caused by", b.biddingID, "is ended is", time.Now())
 
-	fmt.Println(end.Sub(start))
-
+	//fmt.Println(end.Sub(start))
+	time.Sleep(1 * time.Millisecond)
 	return a
 }
 
@@ -184,12 +163,6 @@ func mockUserCreate() []User {
 	var lengeiei = createUser("Katisak", "Jiangjaturapat", 1547)
 	var mattfatt = createUser("Matthew", "McMullin", 7812)
 	var luckyS = createUser("Vorachat", "Somsuay", 3443)
-
-	fmt.Println(tagun9921)
-	fmt.Println(lengeiei)
-	fmt.Println(mattfatt)
-	fmt.Println(luckyS)
-
 	mockUserArray := []User{tagun9921, lengeiei, mattfatt, luckyS}
 	return mockUserArray
 }
@@ -203,9 +176,32 @@ func simpleMockTest() {
 	var testAuction = createAuction(userArray[0]) // tagun9921 creates an auction.
 	// The testing auction has the initial bid of 200, bid steps of 50 and duration of 1 hour.
 	// The possible first bid suppose to have at least 260
+	fmt.Println("\nThe initial bidding price is", testAuction.currMaxBid, "with a bidding step of", testAuction.bidStep)
+	fmt.Println("This testAuction is being hosted by", testAuction.currWinnerName, "with the Auction ID of", testAuction.auctionID)
 
-	var bid1 = createBid(userArray[1], 300)
-	//fmt.Println(bid1.biddingID, bid1.bidPrice, bid1.bidTime, bid1.bidderID)
+	var bid1 = createBid(userArray[1], randomize(100, 2000)) // lengeiei , with the condition of winning the auction
+	testAuction = updateAuction(bid1, testAuction)
+	fmt.Println("As", bid1.bidderName, "bids with", bid1.bidPrice, ", now the current winner is", testAuction.currMaxBid, "with", testAuction.currWinnerName)
 
-	updateAuction(bid1, testAuction)
+	var bid2 = createBid(userArray[2], randomize(100, 2000)) // matt , with the condition of bidding lesser than the step.
+	testAuction = updateAuction(bid2, testAuction)
+
+	fmt.Println("As", bid2.bidderName, "bids with", bid2.bidPrice, ", now the current winner is", testAuction.currMaxBid, "with", testAuction.currWinnerName)
+
+	var bid3 = createBid(userArray[3], randomize(100, 2000)) // lengeiei , with the condition of winning the auction
+	testAuction = updateAuction(bid3, testAuction)
+
+	fmt.Println("As", bid3.bidderName, "bids with", bid3.bidPrice, ", now the current winner is", testAuction.currMaxBid, "with", testAuction.currWinnerName)
+
+	//winnerResult <- testAuction.currWinnerName
+
+}
+
+func randomize(min int, max int) uint64 {
+	rand.Seed(time.Now().UnixNano())
+	var check int = rand.Intn(max-min+1) + min
+	//fmt.Println(check)
+	random := uint64(check)
+
+	return random
 }
