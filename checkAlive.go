@@ -7,55 +7,95 @@ import (
 	"time"
 )
 
+var count int = 0
+
 func main() {
+	checkEvery(15*time.Millisecond, checkConnection1)
+	checkEvery(20*time.Millisecond, checkConnection2)
+}
 
-	servers := []struct {
-		protocol string
-		addr     string
-	}{
-		{"tcp", ":1123"},
+func checkEvery(d time.Duration, f func(time.Time)) {
+	for x := range time.Tick(d) {
+		checkConnection1(x)
+		checkConnection2(x)
 	}
-	for _, serv := range servers {
-		conn, _ := net.Dial(serv.protocol, serv.addr)
-		err := conn.(*net.TCPConn).SetKeepAlive(true)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
+}
 
-		err = conn.(*net.TCPConn).SetKeepAlivePeriod(30 * time.Second)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-		notify := make(chan error)
+func checkConnection1(t time.Time) {
+	conn, _ := net.Dial("tcp", ":1123")
+	err := conn.(*net.TCPConn).SetKeepAlive(true)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	err = conn.(*net.TCPConn).SetKeepAlivePeriod(30 * time.Second)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	notify := make(chan error)
 
-		go func() {
-			buf := make([]byte, 1024)
-			for {
-				n, err := conn.Read(buf)
-				if err != nil {
-					notify <- err
-					if io.EOF == err {
-						close(notify)
-						return
-					}
-				}
-				if n > 0 {
-					fmt.Println("unexpected data:", buf[:n])
-				}
-			}
-		}()
-
+	go func() {
+		buf := make([]byte, 1024)
 		for {
-			select {
-			case err := <-notify:
-				fmt.Println("connection dropped\nerror message:", err)
-				return
-			case <-time.After(time.Second * 1):
-				fmt.Println("timeout, still alive")
+			n, err := conn.Read(buf)
+			if err != nil {
+				notify <- err
+				if io.EOF == err {
+					close(notify)
+					return
+				}
+			}
+			if n > 0 {
+				fmt.Println("unexpected data:", buf[:n])
 			}
 		}
-		defer conn.Close()
+	}()
+	select {
+	case err := <-notify:
+		fmt.Println(time.Now(), "connection1 dropped:", err)
+		return
+	case <-time.After(time.Second * 1):
+		fmt.Println(time.Now(), "timeout1, still alive")
 	}
+	defer conn.Close()
+}
+
+func checkConnection2(t time.Time) {
+	conn, _ := net.Dial("tcp", ":6250")
+	err := conn.(*net.TCPConn).SetKeepAlive(true)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	err = conn.(*net.TCPConn).SetKeepAlivePeriod(30 * time.Second)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	notify := make(chan error)
+	go func() {
+		buf := make([]byte, 1024)
+		for {
+			n, err := conn.Read(buf)
+			if err != nil {
+				notify <- err
+				if io.EOF == err {
+					close(notify)
+					return
+				}
+			}
+			if n > 0 {
+				fmt.Println("unexpected data:", buf[:n])
+			}
+		}
+	}()
+	select {
+	case err := <-notify:
+		fmt.Println(time.Now(), "connection2 dropped:", err)
+		return
+	case <-time.After(time.Second * 1):
+		fmt.Println(time.Now(), "timeout2, still alive")
+	}
+	defer conn.Close()
 }
