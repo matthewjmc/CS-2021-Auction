@@ -28,30 +28,42 @@ func handleConnection(conn net.Conn) {
 		select {
 		case err := <-notify:
 			if io.EOF == err {
-				fmt.Println("connection dropped\n error:", err)
+				fmt.Println(time.Now(), "connection dropped\n error:", err)
 				break
 			}
 
 		case <-time.After(time.Second * 1):
-			fmt.Println("checked, still alive")
+			fmt.Println(time.Now(), "checked, alive")
 		}
 	}
 }
 
 func main() {
-
 	servers := []struct {
 		protocol string
 		addr     string
 	}{
 		{"tcp", ":1123"},
+		{"tcp", ":6250"},
 	}
-	for _, serv := range servers {
-		ln, _ := net.Listen(serv.protocol, serv.addr)
-		fmt.Println(serv)
+	for {
+		ln, _ := net.Listen(servers[0].protocol, servers[0].addr)
+		ln2, _ := net.Listen(servers[1].protocol, servers[1].addr)
+		fmt.Println(ln, ln2)
 		for {
-			conn, _ := ln.Accept()
-			go handleConnection(conn)
+			conn1, _ := ln.Accept()
+			handleConnection(conn1)
+			conn2, _ := ln2.Accept()
+			go handleConnection(conn2)
 		}
 	}
 }
+
+// for _, serv := range servers {
+// 	ln, _ := net.Listen(serv.protocol, serv.addr)
+// 	fmt.Println(serv)
+// 	for {
+// 		conn, _ := ln.Accept()
+// 		go handleConnection(conn)
+// 	}
+// }
