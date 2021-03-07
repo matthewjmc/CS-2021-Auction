@@ -122,7 +122,6 @@ func (b *bucket) update(k Auction) {//update auction
 		}
 		currentNode = currentNode.next
 	}
-	wg.Done()
 }
 
 func (b *bucket) delete(k Auction) {//delete auction
@@ -164,15 +163,14 @@ func main(){ //Testing the corrupt then trying access the same data at same time
 		hashTable.Insert(auction1)
 	}
 
-	ch := make(chan int)
+	ch := make(chan int,2)
 	s := time.Now()
-	wg.Add(1)
+	ch<-1
+	ch<-2
 	go test1(*hashTable,ch)
-	wg.Add(1)
 	go test2(*hashTable,ch)
-	wg.Wait()
 	check1 := Auction{
-		auctionID:     25,
+		auctionID:     1,
 		auctioneerID:  1,
 		itemName:      "au1",
 		currWinnerID:  1,
@@ -184,7 +182,7 @@ func main(){ //Testing the corrupt then trying access the same data at same time
 		actionCount:   0,
 	}
 	check2 := Auction{
-		auctionID:     25,
+		auctionID:     1,
 		auctioneerID:  2,
 		itemName:      "au2",
 		currWinnerID:  2,
