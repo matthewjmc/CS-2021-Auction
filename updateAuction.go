@@ -152,11 +152,11 @@ func randomize(min int, max int) uint64 {
 // Spawn mock up user accounts with some basic information.
 func mockUserCreate() []User {
 
-	var tagun9921 = createUser("Tagun", "Jivasitthikul", 9921)
-	var lengeiei = createUser("Katisak", "Jiangjaturapat", 1547)
-	var mattfatt = createUser("Matthew", "McMullin", 7812)
-	var luckyS = createUser("Vorachat", "Somsuay", 3443)
-	mockUserArray := []User{tagun9921, lengeiei, mattfatt, luckyS}
+	var johnd = createUser("John", "Doe", 9921)
+	var alanr = createUser("Alan", "Rogers", 1547)
+	var stepb = createUser("Stephen", "Browns", 7812)
+	var geors = createUser("George", "Samuels", 3443)
+	mockUserArray := []User{johnd, alanr, stepb, geors}
 	return mockUserArray
 }
 
