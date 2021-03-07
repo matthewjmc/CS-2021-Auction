@@ -1,0 +1,1 @@
+hashTable.Delete(auction2)
