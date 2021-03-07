@@ -7,8 +7,6 @@ import (
 	"time"
 )
 
-var count int = 0
-
 func main() {
 	checkEvery(15*time.Millisecond, checkConnection1)
 	checkEvery(20*time.Millisecond, checkConnection2)
