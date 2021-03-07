@@ -11,17 +11,17 @@ var wg sync.WaitGroup
 const ArraySize = 5
 
 type HashTable struct {
-	array [ArraySize]*bucket
+	array [ArraySize]*linklist
 }
 
 
-type bucket struct {
-	head *bucketNode
+type linklist struct {
+	head *linklistNode
 }
 
-type bucketNode struct {
+type linklistNode struct {
 	key  Auction
-	next *bucketNode
+	next *linklistNode
 }
 
 type Auction struct {
@@ -68,7 +68,7 @@ func (h *HashTable) Update(key Auction) {
 func Init() *HashTable {//Allocate the hash block
 	result := &HashTable{}
 	for i := range result.array {
-		result.array[i] = &bucket{}
+		result.array[i] = &linklist{}
 	}
 	return result
 }
@@ -77,9 +77,9 @@ func hash(key Auction) uint32 {//Find the hash index
 	return key.auctionID % ArraySize
 }
 
-func (b *bucket) insert(k Auction) {//Create auction
+func (b *linklist) insert(k Auction) {//Create auction
 	if  !b.search(k) {
-		newNode := &bucketNode{key: k}
+		newNode := &linklistNode{key: k}
 		newNode.next = b.head
 		b.head = newNode
 		//fmt.Println(k)
@@ -88,7 +88,7 @@ func (b *bucket) insert(k Auction) {//Create auction
 	}
 }
 
-func (b *bucket) search(k Auction) bool {//For search the auction by using auctionID
+func (b *linklist) search(k Auction) bool {//For search the auction by using auctionID
 	currentNode := b.head
 	AID := k.auctionID
 	for currentNode != nil {
@@ -100,7 +100,7 @@ func (b *bucket) search(k Auction) bool {//For search the auction by using aucti
 	return false
 }
 
-func (b *bucket) searchAuction(k Auction) bool {//For checking when updated
+func (b *linklist) searchAuction(k Auction) bool {//For checking when updated
 	currentNode := b.head
 	for currentNode != nil {
 		if currentNode.key == k {
@@ -111,7 +111,7 @@ func (b *bucket) searchAuction(k Auction) bool {//For checking when updated
 	return false
 }
 
-func (b *bucket) update(k Auction) {//update auction
+func (b *linklist) update(k Auction) {//update auction
 	currentNode := b.head
 	AID := k.auctionID
 	for currentNode != nil {
@@ -124,7 +124,7 @@ func (b *bucket) update(k Auction) {//update auction
 	}
 }
 
-func (b *bucket) delete(k Auction) {//delete auction
+func (b *linklist) delete(k Auction) {//delete auction
 
 	if b.head.key.auctionID == k.auctionID {
 		b.head = b.head.next
