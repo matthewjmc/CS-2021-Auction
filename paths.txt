@@ -2,3 +2,12 @@ export GOROOT=/usr/local/go
 export PATH='$PATH':/usr/local/go/bin
 
 Add to /etc/profile
+
+
+fs.file-max = 65536
+
+To /etc/sysctl.conf
+
+* soft nofile 1048576
+* hard nofile 1048576
+/etc/security/limits.conf4
