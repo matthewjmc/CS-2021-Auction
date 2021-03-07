@@ -19,7 +19,7 @@ func handleConnection(conn net.Conn) {
 				return
 			}
 			if n > 0 {
-				fmt.Println("unexpected data: %s", buf[:n])
+				fmt.Println("unexpected data:", buf[:n])
 			}
 		}
 	}()
@@ -29,7 +29,7 @@ func handleConnection(conn net.Conn) {
 		case err := <-notify:
 			if io.EOF == err {
 				fmt.Println("connection dropped\n error:", err)
-				return
+				break
 			}
 
 		case <-time.After(time.Second * 1):
@@ -45,17 +45,13 @@ func main() {
 		addr     string
 	}{
 		{"tcp", ":1123"},
-		{"tcp", ":6250"},
 	}
-	fmt.Println("Launching server...")
-
 	for _, serv := range servers {
-		ln1, _ := net.Listen(serv.protocol, serv.addr)
-		fmt.Println(serv.addr)
+		ln, _ := net.Listen(serv.protocol, serv.addr)
+		fmt.Println(serv)
 		for {
-			conn, _ := ln1.Accept()
+			conn, _ := ln.Accept()
 			go handleConnection(conn)
 		}
 	}
-
 }

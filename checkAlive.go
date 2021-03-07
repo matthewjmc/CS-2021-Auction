@@ -43,7 +43,7 @@ func main() {
 					}
 				}
 				if n > 0 {
-					fmt.Println("unexpected data: %s", buf[:n])
+					fmt.Println("unexpected data:", buf[:n])
 				}
 			}
 		}()
@@ -51,12 +51,12 @@ func main() {
 		for {
 			select {
 			case err := <-notify:
-				fmt.Println("connection dropped message", err)
+				fmt.Println("connection dropped\nerror message:", err)
 				return
 			case <-time.After(time.Second * 1):
-				fmt.Println("timeout 1, still alive")
+				fmt.Println("timeout, still alive")
 			}
 		}
+		defer conn.Close()
 	}
-
 }
