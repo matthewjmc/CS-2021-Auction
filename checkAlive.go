@@ -14,7 +14,6 @@ func main() {
 		addr     string
 	}{
 		{"tcp", ":1123"},
-		{"tcp", ":6250"},
 	}
 	for _, serv := range servers {
 		conn, _ := net.Dial(serv.protocol, serv.addr)
