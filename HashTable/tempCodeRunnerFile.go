@@ -1,1 +1,1 @@
-hashTable.Delete(auction2)
+wg.Wait()

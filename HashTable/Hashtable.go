@@ -8,7 +8,7 @@ import (
 
 var wg sync.WaitGroup
 
-const ArraySize = 100
+const ArraySize = 5
 
 type HashTable struct {
 	array [ArraySize]*bucket
@@ -31,9 +31,9 @@ type Auction struct {
 	currWinnerID  uint32
 	currMaxBid    uint32
 	bidStep       uint32
-	latestBidTime time.Time
-	startTime     time.Time
-	endTime       time.Time
+	latestBidTime uint32
+	startTime     uint32
+	endTime       uint32
 	actionCount   uint32
 }
 
@@ -63,7 +63,21 @@ func (h *HashTable) Update(key Auction) {
 	h.array[index].update(key)
 }
 
-func (b *bucket) insert(k Auction) {
+
+
+func Init() *HashTable {//Allocate the hash block
+	result := &HashTable{}
+	for i := range result.array {
+		result.array[i] = &bucket{}
+	}
+	return result
+}
+
+func hash(key Auction) uint32 {//Find the hash index
+	return key.auctionID % ArraySize
+}
+
+func (b *bucket) insert(k Auction) {//Create auction
 	if  !b.search(k) {
 		newNode := &bucketNode{key: k}
 		newNode.next = b.head
@@ -74,7 +88,7 @@ func (b *bucket) insert(k Auction) {
 	}
 }
 
-func (b *bucket) search(k Auction) bool {
+func (b *bucket) search(k Auction) bool {//For search the auction by using auctionID
 	currentNode := b.head
 	AID := k.auctionID
 	for currentNode != nil {
@@ -86,9 +100,8 @@ func (b *bucket) search(k Auction) bool {
 	return false
 }
 
-func (b *bucket) searchAuction(k Auction) bool {
+func (b *bucket) searchAuction(k Auction) bool {//For checking when updated
 	currentNode := b.head
-	
 	for currentNode != nil {
 		if currentNode.key == k {
 			return true
@@ -98,31 +111,29 @@ func (b *bucket) searchAuction(k Auction) bool {
 	return false
 }
 
-func (b *bucket) update(k Auction) {
+func (b *bucket) update(k Auction) {//update auction
 	currentNode := b.head
 	AID := k.auctionID
 	for currentNode != nil {
 		if currentNode.key.auctionID == AID {
 			currentNode.key = k
-			//fmt.Println(currentNode.key)
+			fmt.Println(currentNode.key)
 			return
 		}
 		currentNode = currentNode.next
 	}
-	
+	wg.Done()
 }
 
-func (b *bucket) delete(k Auction) {
+func (b *bucket) delete(k Auction) {//delete auction
 
 	if b.head.key.auctionID == k.auctionID {
 		b.head = b.head.next
 		return
 	}
-
 	previousNode := b.head
 	for previousNode.next != nil {
 		if previousNode.next.key.auctionID == k.auctionID {
-			//delete
 			previousNode.next = previousNode.next.next
 			return
 		}
@@ -130,103 +141,108 @@ func (b *bucket) delete(k Auction) {
 	}
 }
 
-// hash
-func hash(key Auction) uint32 {
-	return key.auctionID % ArraySize
-}
 
 
-func Init() *HashTable {
-	result := &HashTable{}
-	for i := range result.array {
-		result.array[i] = &bucket{}
-	}
-	return result
-}
 
-func test1(c chan int) {
+
+func main(){ //Testing the corrupt then trying access the same data at same time.
 	hashTable := Init()
 	auction1 := Auction{
-		auctionID:     123,
+		auctionID:     0,
 		auctioneerID:  123,
-		itemName:      "TTT",
+		itemName:      "au1",
 		currWinnerID:  123,
 		currMaxBid:    123,
 		bidStep:       123,
-		latestBidTime: time.Now(),
-		startTime:     time.Now(),
-		endTime:       time.Now(),
+		latestBidTime: 0,
+		startTime:     0,
+		endTime:       0,
 		actionCount:   0,
 	}
-
-	auction2 := Auction{
-		auctionID:     123,
-		auctioneerID:  222,
-		itemName:      "YYY",
-		currWinnerID:  222,
-		currMaxBid:    222,
-		bidStep:       222,
-		latestBidTime: time.Now(),
-		startTime:     time.Now(),
-		endTime:       time.Now(),
-		actionCount:   0,
-	}
-	for i:=0 ; i<10000; i++{
+	for i:=0 ; i<50; i++{
+		auction1.auctionID = uint32(i)
 		hashTable.Insert(auction1)
-		hashTable.Update(auction2)
-		hashTable.Delete(auction2)
-	}
-	fmt.Println("done")
-	wg.Done()
-	
-}
-
-func test2(c chan int) {
-	hashTable := Init()
-	
-	auction1 := Auction{
-		auctionID:     130,
-		auctioneerID:  123,
-		itemName:      "TTT",
-		currWinnerID:  123,
-		currMaxBid:    123,
-		bidStep:       123,
-		latestBidTime: time.Now(),
-		startTime:     time.Now(),
-		endTime:       time.Now(),
-		actionCount:   0,
 	}
 
-	auction2 := Auction{
-		auctionID:     130,
-		auctioneerID:  222,
-		itemName:      "YYY",
-		currWinnerID:  222,
-		currMaxBid:    222,
-		bidStep:       222,
-		latestBidTime: time.Now(),
-		startTime:     time.Now(),
-		endTime:       time.Now(),
-		actionCount:   0,
-	}
-	for i:=0 ; i<10000; i++{
-		hashTable.Insert(auction1)
-		hashTable.Update(auction2)
-		hashTable.Delete(auction2)
-	}
-	fmt.Println("done")
-	wg.Done()
-
-}
-
-func main(){
 	ch := make(chan int)
 	s := time.Now()
 	wg.Add(1)
-	go test1(ch)
+	go test1(*hashTable,ch)
 	wg.Add(1)
-	go test1(ch)
+	go test2(*hashTable,ch)
 	wg.Wait()
+	check1 := Auction{
+		auctionID:     25,
+		auctioneerID:  1,
+		itemName:      "au1",
+		currWinnerID:  1,
+		currMaxBid:    1,
+		bidStep:       1,
+		latestBidTime: 1,
+		startTime:     1,
+		endTime:       1,
+		actionCount:   0,
+	}
+	check2 := Auction{
+		auctionID:     25,
+		auctioneerID:  2,
+		itemName:      "au2",
+		currWinnerID:  2,
+		currMaxBid:    2,
+		bidStep:       2,
+		latestBidTime: 2,
+		startTime:     2,
+		endTime:       2,
+		actionCount:   0,
+	}
 	fmt.Println(time.Since(s))
+
+	
+	fmt.Println("ID1c",hashTable.Search(check1))
+	fmt.Println("ID2c",hashTable.Search(check2))
+	fmt.Println("auction1c",hashTable.SearchAuction(check1))
+	fmt.Println("auction2c",hashTable.SearchAuction(check2))
+	
+
+}
+
+func test1(h HashTable, c chan int){
+	auction2 := Auction{
+		auctionID:     0,
+		auctioneerID:  1,
+		itemName:      "au1",
+		currWinnerID:  1,
+		currMaxBid:    1,
+		bidStep:       1,
+		latestBidTime: 1,
+		startTime:     1,
+		endTime:       1,
+		actionCount:   0,
+	}
+	for j:=0 ; j<50;j++{
+		auction2.auctionID = uint32(j)
+		h.Update(auction2)
+	}
+	
+}
+
+func test2(h HashTable, c chan int){
+	auction2 := Auction{
+		auctionID:     0,
+		auctioneerID:  2,
+		itemName:      "au2",
+		currWinnerID:  2,
+		currMaxBid:    2,
+		bidStep:       2,
+		latestBidTime: 2,
+		startTime:     2,
+		endTime:       2,
+		actionCount:   0,
+	}
+	
+	for j:=0 ; j<50;j++{
+		auction2.auctionID = uint32(j)
+		h.Update(auction2)
+	}
 	
 }
