@@ -61,6 +61,10 @@ func handleCon(data Package) {
 	//Transmit and Receive
 	for {
 		fmt.Fprintf(connection,string(jsonData)+"\n")
+		// _,err = connection.Write(jsonData)
+		// if err != nil{
+		// 	fmt.Println(err)
+		// }
 		data, _ := bufio.NewReader(connection).ReadString('\n')
 		fmt.Println("From -->", data)
 		time.Sleep(1*time.Second)
