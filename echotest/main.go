@@ -60,3 +60,6 @@ func handleConnection(conn net.Conn, prefix string) {
 		conn.Write([]byte(line))
 	}
 }
+
+//https://github.com/venilnoronha/tcp-echo-server/find/master
+//are used for testing as the actual server is not ready.
