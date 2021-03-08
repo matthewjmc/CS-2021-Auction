@@ -13,8 +13,8 @@ import (
 //	fmt.Printf("The datetime data type is %T\n", currentTime.Format("2006-01-02 15:04:05.000000000"))
 
 func main() {
-	multipleUserTest()
-	//simpleMockTest()
+	//multipleUserTest()
+	simpleMockTest()
 }
 
 // User contains a user's information for every other implementation.
@@ -164,8 +164,6 @@ func mockUserCreate() []User {
 func simpleMockTest() {
 
 	var userArray = mockUserCreate()
-	//fmt.Println("\n", userArray)
-	//fmt.Println(userArray[0])
 
 	var testAuction = createAuction(userArray[0], randomize(100, 500), randomize(10, 100), 1)
 	// tagun9921 creates an auction.
@@ -174,32 +172,30 @@ func simpleMockTest() {
 	fmt.Println("\nThe initial bidding price is", testAuction.currMaxBid, "with a bidding step of", testAuction.bidStep)
 	fmt.Println("This testAuction is being hosted by", testAuction.currWinnerName, "with the Auction ID of", testAuction.auctionID)
 
-	var bid1 = createBid(userArray[1], randomize(100, 2000))
+	var bid1 = createBid(userArray[1], 600)
 	testAuction = updateAuction(bid1, testAuction)
-
 	fmt.Println("As", bid1.bidderName, "bids with", bid1.bidPrice, ", now the current winner is", testAuction.currMaxBid, "with", testAuction.currWinnerName)
 
-	var bid2 = createBid(userArray[2], randomize(100, 2000))
+	var bid2 = createBid(userArray[2], 5000) /*randomize(100, 2000)*/
 	testAuction = updateAuction(bid2, testAuction)
-
 	fmt.Println("As", bid2.bidderName, "bids with", bid2.bidPrice, ", now the current winner is", testAuction.currMaxBid, "with", testAuction.currWinnerName)
 
-	var bid3 = createBid(userArray[3], randomize(100, 2000))
+	var bid3 = createBid(userArray[3], 1500)
 	testAuction = updateAuction(bid3, testAuction)
-
-	fmt.Println("As", bid3.bidderName, "bids with", bid3.bidPrice, ", now the current winner is", testAuction.currMaxBid, "with", testAuction.currWinnerName)
+	//fmt.Println("As", bid3.bidderName, "bids with", bid3.bidPrice, ", now the current winner is", testAuction.currMaxBid, "with", testAuction.currWinnerName)
 	//fmt.Println(testAuction.startTime)
+
+	fmt.Println(testAuction.currWinnerName)
 }
 
 // The functions below are used for testing for multiple users handling.
-
 // creation of multiple users, with those incremented counts being used to provide a unique identification.
 func multiUserCreate() []User {
 
 	var count uint64 = 0
 	mockUserArray := []User{}
 
-	for count = 0; count < 10000; count++ {
+	for count = 0; count <= 100000; count++ {
 		mockUserArray = append(mockUserArray, createUser("username"+fmt.Sprint(count), "b", count))
 	}
 	return mockUserArray
@@ -210,7 +206,7 @@ func multiAuctionCreate(userArray []User) []Auction {
 	var count uint64 = 0
 	mockAuctArray := []Auction{}
 
-	for count = 0; count < 99; count++ {
+	for count = 0; count <= 100; count++ {
 		time.Sleep(1 * time.Millisecond)
 		mockAuctArray = append(mockAuctArray, createAuction(userArray[randomize(0, len(userArray))], randomize(100, 200), randomize(1, 100), count))
 	}
@@ -238,12 +234,12 @@ func mockMultiBidding(userArray []User, auction Auction) Auction {
 	go func() {
 		fmt.Println("First bidding is being made")
 		newBidder1 := userArray[randomize(0, len(userArray)-1)]
-		updatedAuction2 <- updateAuction(createBid(newBidder1, randomize(0, len(userArray)-1)), auction)
+		updatedAuction2 <- updateAuction(createBid(newBidder1, randomize(0, 100000)), auction)
 	}()
 	go func() {
 		fmt.Println("Second bidding is being made")
 		newBidder2 := userArray[randomize(0, len(userArray)-1)]
-		updatedAuction1 <- updateAuction(createBid(newBidder2, randomize(0, len(userArray)-1)), auction)
+		updatedAuction1 <- updateAuction(createBid(newBidder2, randomize(0, 100000)), auction)
 	}()
 
 	updatedResult1, updatedResult2 := <-updatedAuction1, <-updatedAuction2
@@ -264,17 +260,24 @@ func mockMultiBidding(userArray []User, auction Auction) Auction {
 
 func multipleUserTest() {
 	fmt.Println("\nThis line marks the creation of user mock data creation.")
+
+	mockUpStart := time.Now()
 	userArray := multiUserCreate()
 	auctionArray := multiAuctionCreate(userArray)
 
-	/*fmt.Println("\nThe user array with 10000 users is listed below.")
-	fmt.Println(userArray)
-	fmt.Println("\nThe auction array with 100 auctions is listed below.")
-	for i := 1; i < len(auctionArray); i++ {
-		fmt.Println(auctionArray[i])
-	}*/
+	/*
+		fmt.Println("\nThe user array with 10000 users is listed below.")
+		fmt.Println(userArray)
+		fmt.Println("\nThe auction array with 100 auctions is listed below.")
+		for i := 1; i < len(auctionArray); i++ {
+			fmt.Println(auctionArray[i])
+		}
+	*/
 
 	fmt.Println("This marks the end of mock data setup\n")
+	mockUpEnding := time.Now()
+	fmt.Println("The initial time captured before the spawning is at", mockUpStart)
+	fmt.Println("The time captured after completing the spawning is at", mockUpEnding)
 	result := mockMultiBidding(userArray, auctionArray[randomize(0, len(auctionArray)-1)])
 	fmt.Println(result.currMaxBid)
 }
