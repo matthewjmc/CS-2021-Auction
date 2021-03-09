@@ -10,7 +10,3 @@ echo "Choo Choo"
 sleep 2
 
 sl
-
-
-
-
