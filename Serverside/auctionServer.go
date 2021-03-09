@@ -20,7 +20,7 @@ func main() {
 			fmt.Println(err)
 			return
 		}
-		fmt.Println("Conn Number:", count,"-->",con.RemoteAddr().String())
+		//fmt.Println("Conn Number:", count,"-->",con.RemoteAddr().String())
 		go requestHandle(con, count)
 		count++
 		fmt.Println(count)
@@ -29,12 +29,11 @@ func main() {
 
 func requestHandle(con net.Conn, cnt int64) {
 	for {
-		data, err := bufio.NewReader(con).ReadString('\n')
+		_, err := bufio.NewReader(con).ReadString('\n')
 		if err != nil {
 			fmt.Println(err)
 			break
 		}
-		fmt.Println("From", con.RemoteAddr().String(), "-->", data)
 		go returnData(con)
 	}
 	con.Close()

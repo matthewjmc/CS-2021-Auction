@@ -13,7 +13,7 @@ services:
   driver1:
     image: dachad/tcpgoon:latest
     container_name: driver1
-    command: "run 10.0.59.139 19530 --connections 30000 -y -s 20"
+    command: "run 10.0.59.139 19530 --connections 27000 -y -s 20"
     networks:
       macvlan:
         ipv4_address: 10.0.50.11 
@@ -21,7 +21,7 @@ services:
   driver2:
     image: dachad/tcpgoon:latest
     container_name: driver2
-    command: "run 10.0.59.139 19530 --connections 30000 -y -s 20"
+    command: "run 10.0.59.139 19530 --connections 27000 -y -s 20"
     networks:
       macvlan:
         ipv4_address: 10.0.50.12
@@ -29,7 +29,7 @@ services:
   driver3:
     image: dachad/tcpgoon:latest
     container_name: driver3
-    command: "run 10.0.59.139 19530 --connections 30000 -y -s 20"
+    command: "run 10.0.59.139 19530 --connections 27000 -y -s 20"
     networks:
       macvlan:
         ipv4_address: 10.0.50.13
@@ -37,7 +37,7 @@ services:
   driver4:
     image: dachad/tcpgoon:latest
     container_name: driver4
-    command: "run 10.0.59.139 19530 --connections 30000 -y -s 20"
+    command: "run 10.0.59.139 19530 --connections 27000 -y -s 20"
     networks:
       macvlan:
         ipv4_address: 10.0.50.14
@@ -45,7 +45,7 @@ services:
   driver5:
     image: dachad/tcpgoon:latest
     container_name: driver5
-    command: "run 10.0.59.139 19530 --connections 30000 -y -s 20"
+    command: "run 10.0.59.139 19530 --connections 27000 -y -s 20"
     networks:
       macvlan:
         ipv4_address: 10.0.50.15
@@ -53,7 +53,7 @@ services:
   driver6:
     image: dachad/tcpgoon:latest
     container_name: driver6
-    command: "run 10.0.59.139 19530 --connections 30000 -y -s 20"
+    command: "run 10.0.59.139 19530 --connections 27000 -y -s 20"
     networks:
       macvlan:
         ipv4_address: 10.0.50.16
