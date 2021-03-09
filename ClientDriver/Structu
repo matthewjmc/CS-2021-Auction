@@ -1,0 +1,9 @@
+Client{
+    ClientObj net.Conn
+    UserID string
+}
+
+Auction{
+    AuctionID int
+    ConnectedClients []Clients
+}
