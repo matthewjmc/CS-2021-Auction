@@ -18,4 +18,9 @@ func main() {
 		fmt.Println(err)
 	}
 	fmt.Println(string(data))
+	data,err = exec.Command("sl").Output()
+	if err != nil{
+		fmt.Println(err)
+	}
+	fmt.Println(string(data))
 }
