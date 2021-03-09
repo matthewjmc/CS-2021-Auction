@@ -6,7 +6,7 @@ echo "Github Commit Message:"
 read userin
 echo "<--------------Sleeping Now Commit and Pushing to Github-------------->"
 
-git commit -a -m $userin
+git commit -a -m $(echo $userin)
 git push origin Matthew
 
 echo "Choo Choo"
