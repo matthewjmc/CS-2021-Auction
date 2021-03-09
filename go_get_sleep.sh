@@ -7,7 +7,7 @@ git commit -a -m $uservar
 git push origin Matthew
 
 echo "Choo Choo"
-sleep 1
+sleep 2
 
 sl
 
