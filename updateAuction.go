@@ -282,6 +282,20 @@ func multipleUserTest() {
 	fmt.Println(result.currMaxBid)
 }
 
+func addNewAuction(auctionArray *[]Auction, auction Auction) *[]Auction {
+
+	newAuctionArray := append(*auctionArray, auction)
+
+	return &newAuctionArray
+
+}
+
+func addNewUser(userArray *[]User, user User) *[]User {
+
+	newUserArray := append(*userArray, user)
+	return &newUserArray
+}
+
 /*
 func main() {
 
