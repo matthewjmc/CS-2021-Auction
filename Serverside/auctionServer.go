@@ -50,7 +50,7 @@ func requestHandle(con net.Conn) {
 		rawdata,err := bufio.NewReader(con).ReadString('\n')
 		if !state{
 			json.Unmarshal([]byte(rawdata), &received)
-			addUsr(con,received.AuctionID)
+			addUsr(con,received.AuctionID,received.UserID)
 		}
 		if err != nil {
 			fmt.Println(err)
@@ -65,6 +65,12 @@ func returnData(con net.Conn){
 	fmt.Fprintf(con, con.RemoteAddr().String()+"\n")
 }
 
-func addUsr(con net.Conn, AuctionID int){
-	if 
+func addUsr(con net.Conn, AuctionID int, UserID int){
+	if len(ptSession) == 0{
+		
+		ptSession.append(ptSession,Auction{AuctionID})
+	}
+	for i := range ptSession{
+		fmt.Println(AuctionID)
+	}
 }
