@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"time"
 	"sync"
+	"time"
 )
 
 var wg sync.WaitGroup
@@ -13,7 +13,6 @@ const ArraySize = 5
 type HashTable struct {
 	array [ArraySize]*linklist
 }
-
 
 type linklist struct {
 	head *linklistNode
@@ -40,7 +39,7 @@ type Auction struct {
 func (h *HashTable) Insert(key Auction) {
 	index := hash(key)
 	h.array[index].insert(key)
-	
+
 }
 
 func (h *HashTable) Search(key Auction) bool {
@@ -63,9 +62,7 @@ func (h *HashTable) Update(key Auction) {
 	h.array[index].update(key)
 }
 
-
-
-func Init() *HashTable {//Allocate the hash block
+func Init() *HashTable { //Allocate the hash block
 	result := &HashTable{}
 	for i := range result.array {
 		result.array[i] = &linklist{}
@@ -73,12 +70,12 @@ func Init() *HashTable {//Allocate the hash block
 	return result
 }
 
-func hash(key Auction) uint32 {//Find the hash index
+func hash(key Auction) uint32 { //Find the hash index
 	return key.auctionID % ArraySize
 }
 
-func (b *linklist) insert(k Auction) {//Create auction
-	if  !b.search(k) {
+func (b *linklist) insert(k Auction) { //Create auction
+	if !b.search(k) {
 		newNode := &linklistNode{key: k}
 		newNode.next = b.head
 		b.head = newNode
@@ -88,7 +85,7 @@ func (b *linklist) insert(k Auction) {//Create auction
 	}
 }
 
-func (b *linklist) search(k Auction) bool {//For search the auction by using auctionID
+func (b *linklist) search(k Auction) bool { //For search the auction by using auctionID
 	currentNode := b.head
 	AID := k.auctionID
 	for currentNode != nil {
@@ -100,7 +97,7 @@ func (b *linklist) search(k Auction) bool {//For search the auction by using auc
 	return false
 }
 
-func (b *linklist) searchAuction(k Auction) bool {//For checking when updated
+func (b *linklist) searchAuction(k Auction) bool { //For checking when updated
 	currentNode := b.head
 	for currentNode != nil {
 		if currentNode.key == k {
@@ -111,7 +108,7 @@ func (b *linklist) searchAuction(k Auction) bool {//For checking when updated
 	return false
 }
 
-func (b *linklist) update(k Auction) {//update auction
+func (b *linklist) update(k Auction) { //update auction
 	currentNode := b.head
 	AID := k.auctionID
 	for currentNode != nil {
@@ -124,7 +121,7 @@ func (b *linklist) update(k Auction) {//update auction
 	}
 }
 
-func (b *linklist) delete(k Auction) {//delete auction
+func (b *linklist) delete(k Auction) { //delete auction
 
 	if b.head.key.auctionID == k.auctionID {
 		b.head = b.head.next
@@ -140,11 +137,7 @@ func (b *linklist) delete(k Auction) {//delete auction
 	}
 }
 
-
-
-
-
-func main(){ //Testing the corrupt then trying access the same data at same time.
+func hashTest() { //Testing the corrupt then trying access the same data at same time.
 	hashTable := Init()
 	auction1 := Auction{
 		auctionID:     0,
@@ -158,17 +151,17 @@ func main(){ //Testing the corrupt then trying access the same data at same time
 		endTime:       0,
 		actionCount:   0,
 	}
-	for i:=0 ; i<50; i++{
+	for i := 0; i < 50; i++ {
 		auction1.auctionID = uint32(i)
 		hashTable.Insert(auction1)
 	}
 
-	ch := make(chan int,2)
+	ch := make(chan int, 2)
 	s := time.Now()
-	ch<-1
-	ch<-2
-	go test1(*hashTable,ch)
-	go test2(*hashTable,ch)
+	ch <- 1
+	ch <- 2
+	go test1(*hashTable, ch)
+	go test2(*hashTable, ch)
 	check1 := Auction{
 		auctionID:     1,
 		auctioneerID:  1,
@@ -195,16 +188,14 @@ func main(){ //Testing the corrupt then trying access the same data at same time
 	}
 	fmt.Println(time.Since(s))
 
-	
-	fmt.Println("ID1c",hashTable.Search(check1))
-	fmt.Println("ID2c",hashTable.Search(check2))
-	fmt.Println("auction1c",hashTable.SearchAuction(check1))
-	fmt.Println("auction2c",hashTable.SearchAuction(check2))
-	
+	fmt.Println("ID1c", hashTable.Search(check1))
+	fmt.Println("ID2c", hashTable.Search(check2))
+	fmt.Println("auction1c", hashTable.SearchAuction(check1))
+	fmt.Println("auction2c", hashTable.SearchAuction(check2))
 
 }
 
-func test1(h HashTable, c chan int){
+func test1(h HashTable, c chan int) {
 	auction2 := Auction{
 		auctionID:     0,
 		auctioneerID:  1,
@@ -217,14 +208,14 @@ func test1(h HashTable, c chan int){
 		endTime:       1,
 		actionCount:   0,
 	}
-	for j:=0 ; j<50;j++{
+	for j := 0; j < 50; j++ {
 		auction2.auctionID = uint32(j)
 		h.Update(auction2)
 	}
-	
+
 }
 
-func test2(h HashTable, c chan int){
+func test2(h HashTable, c chan int) {
 	auction2 := Auction{
 		auctionID:     0,
 		auctioneerID:  2,
@@ -237,10 +228,10 @@ func test2(h HashTable, c chan int){
 		endTime:       2,
 		actionCount:   0,
 	}
-	
-	for j:=0 ; j<50;j++{
+
+	for j := 0; j < 50; j++ {
 		auction2.auctionID = uint32(j)
 		h.Update(auction2)
 	}
-	
+
 }

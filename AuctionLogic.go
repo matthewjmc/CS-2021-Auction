@@ -147,6 +147,8 @@ func randomize(min int, max int) uint64 {
 	return random
 }
 
+// MOCK UP DATA CREATIONS ARE CREATED BELOW.
+
 // mockUserCreate() and simpleMockTest() are used to test a simple test case for the auction system.
 
 // Spawn mock up user accounts with some basic information.

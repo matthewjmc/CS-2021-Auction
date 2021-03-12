@@ -1,11 +1,11 @@
 package main
 
 import (
-	"time"
 	"testing"
+	"time"
 )
 
-func Testinsert(t *testing.T)  {
+func Testinsert(t *testing.T) {
 	hashTable := Init()
 	auction1 := Auction{
 		auctionID:     1,
@@ -32,15 +32,9 @@ func Testinsert(t *testing.T)  {
 		endTime:       time.Now(),
 		actionCount:   0,
 	}
-	
-	
-	
-	
+
 	hashTable.Insert(auction1)
 	hashTable.Update(auction2)
 	hashTable.Delete(auction2)
-	
-	
-	
-	
+
 }
