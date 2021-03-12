@@ -17,13 +17,11 @@ type Package struct{  // Data Sent and Received From user
 }
 
 type Auction struct{ //Auctions Running at one time
-	AuctionID int64
+	AuctionID int
 	ConnectedClients []net.Conn
 }
 
 var aucSessions = []Auction{} //All Connected Auctions
-var ptSession = &aucSessions
-
 
 func main() {
 	stream, err := net.Listen("tcp", ":19530") //Listen at port 19530
@@ -51,6 +49,7 @@ func requestHandle(con net.Conn) {
 		if !state{
 			json.Unmarshal([]byte(rawdata), &received)
 			addUsr(con,received.AuctionID,received.UserID)
+			state = true
 		}
 		if err != nil {
 			fmt.Println(err)
@@ -65,12 +64,14 @@ func returnData(con net.Conn){
 	fmt.Fprintf(con, con.RemoteAddr().String()+"\n")
 }
 
-func addUsr(con net.Conn, AuctionID int, UserID int){
-	if len(ptSession) == 0{
-		
-		ptSession.append(ptSession,Auction{AuctionID})
+func addUsr(con net.Conn, aID int, uID int){
+	if len(aucSessions) == 0{
+		fmt.Println(aID)
+		aucSessions = append(aucSessions,
+			Auction{
+				AuctionID:aID})
 	}
-	for i := range ptSession{
-		fmt.Println(AuctionID)
+	for _ = range aucSessions{
+		fmt.Println(aucSessions)
 	}
 }
