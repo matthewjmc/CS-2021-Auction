@@ -21,7 +21,7 @@ type Auction struct{ //Auctions Running at one time
 	ConnectedClients []net.Conn
 }
 
-var aucSessions = []Auction{} //All Connected Auctions
+var aucSessions = []Auction{} //All Connected Auction
 
 func main() {
 	stream, err := net.Listen("tcp", ":19530") //Listen at port 19530
@@ -65,13 +65,34 @@ func returnData(con net.Conn){
 }
 
 func addUsr(con net.Conn, aID int, uID int){
-	if len(aucSessions) == 0{
+	exists,index := _aucExists(aID)
+	if len(aucSessions) == 0 && !exists{
 		fmt.Println(aID)
 		aucSessions = append(aucSessions,
 			Auction{
-				AuctionID:aID})
+				AuctionID:aID,
+				ConnectedClients:[]net.Conn{con}})
+	} else{
+		if exists{
+			aucSessions[index].ConnectedClients = append(aucSessions[index].ConnectedClients,con)
+		}else{
+			aucSessions = append(aucSessions,
+				Auction{
+					AuctionID:aID,
+					ConnectedClients:[]net.Conn{con}})
+		}
+		//fmt.Println("Line85:",aID)
 	}
-	for _ = range aucSessions{
-		fmt.Println(aucSessions)
+	
+	//fmt.Println(aucSessions)
+	
+}
+
+func _aucExists(aID int) (bool,int){
+	for i :=0 ; i < len(aucSessions); i++{
+		if aucSessions[i].AuctionID == aID{
+			return true,i
+		}
 	}
+	return false,0
 }
