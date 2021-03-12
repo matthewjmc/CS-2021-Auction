@@ -10,61 +10,13 @@ networks:
     driver: bridge
 
 services:
-  driver1:
-    image: dachad/tcpgoon:latest
-    container_name: driver1
-    command: "run 10.0.59.139 19530 --connections 20000 -y -s 20"
-    networks:
-      macvlan:
-        ipv4_address: 10.0.50.11 
-
-  driver2:
-    image: dachad/tcpgoon:latest
-    container_name: driver2
-    command: "run 10.0.59.139 19530 --connections 20000 -y -s 20"
-    networks:
-      macvlan:
-        ipv4_address: 10.0.50.12
-
-  # driver3:
+  # driver1:
   #   image: dachad/tcpgoon:latest
-  #   container_name: driver3
-  #   command: "run 10.0.59.139 19530 --connections 27000 -y -s 20"
+  #   container_name: driver1
+  #   command: "run 10.0.59.139 19530 --connections 20000 -y -s 20"
   #   networks:
   #     macvlan:
-  #       ipv4_address: 10.0.50.13
-
-  # driver4:
-  #   image: dachad/tcpgoon:latest
-  #   container_name: driver4
-  #   command: "run 10.0.59.139 19530 --connections 27000 -y -s 20"
-  #   networks:
-  #     macvlan:
-  #       ipv4_address: 10.0.50.14
-
-  # driver5:
-  #   image: dachad/tcpgoon:latest
-  #   container_name: driver5
-  #   command: "run 10.0.59.139 19530 --connections 27000 -y -s 20"
-  #   networks:
-  #     macvlan:
-  #       ipv4_address: 10.0.50.15
-
-  # driver6:
-  #   image: dachad/tcpgoon:latest
-  #   container_name: driver6
-  #   command: "run 10.0.59.139 19530 --connections 27000 -y -s 20"
-  #   networks:
-  #     macvlan:
-  #       ipv4_address: 10.0.50.16
-
-  # driver7:
-  #   image: dachad/tcpgoon:latest
-  #   container_name: driver7
-  #   command: "run 10.0.59.139 19530 --connections 30000 -y -s 20"
-  #   networks:
-  #     macvlan:
-  #       ipv4_address: 10.0.50.17
+  #       ipv4_address: 10.0.50.11 
 
 
   portainer:
@@ -81,3 +33,58 @@ services:
       - ${DOCKERDIR}/shared:/shared
     environment:
       - portainer_data:/data
+  
+  go1:
+    image: golang:1.8-alpine
+    container_name: goDriver1
+    command: "go run clientSpawn.go 28000"
+    volumes:
+      - $GODIR:/go/src/go-with-compose
+    working_dir: /go/src/go-with-compose
+    networks:
+      macvlan:
+        ipv4_address: 10.0.50.11
+
+  go2:
+    image: golang:1.8-alpine
+    container_name: goDriver2
+    command: "go run clientSpawn.go 28000"
+    volumes:
+      - $GODIR:/go/src/go-with-compose
+    working_dir: /go/src/go-with-compose
+    networks:
+      macvlan:
+        ipv4_address: 10.0.50.12
+  
+  go3:
+    image: golang:1.8-alpine
+    container_name: goDriver3
+    command: "go run clientSpawn.go 28000"
+    volumes:
+      - $GODIR:/go/src/go-with-compose
+    working_dir: /go/src/go-with-compose
+    networks:
+      macvlan:
+        ipv4_address: 10.0.50.13
+  
+  go4:
+    image: golang:1.8-alpine
+    container_name: goDriver4
+    command: "go run clientSpawn.go 28000"
+    volumes:
+      - $GODIR:/go/src/go-with-compose
+    working_dir: /go/src/go-with-compose
+    networks:
+      macvlan:
+        ipv4_address: 10.0.50.14
+
+  go5:
+    image: golang:1.8-alpine
+    container_name: goDriver5
+    command: "go run clientSpawn.go 28000"
+    volumes:
+      - $GODIR:/go/src/go-with-compose
+    working_dir: /go/src/go-with-compose
+    networks:
+      macvlan:
+        ipv4_address: 10.0.50.15

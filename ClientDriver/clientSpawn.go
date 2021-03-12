@@ -28,7 +28,7 @@ func main() {
 	n:=1
 	for n<args{
 		user := Package{}
-		user.AuctionID = rand.Intn(1500 - 1) + 1
+		user.AuctionID = rand.Intn(20 - 1) + 1
 		user.UserID = rand.Intn(2000 - 1) + 1
 		user.Data.Item = "Price"
 		user.Data.Value = rand.Intn(100000 - 10) + 10
