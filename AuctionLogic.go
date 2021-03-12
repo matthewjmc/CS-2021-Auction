@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"math/rand"
+	"sync"
 	"time"
 )
 
@@ -13,9 +14,13 @@ import (
 //	fmt.Printf("The datetime data type is %T\n", currentTime.Format("2006-01-02 15:04:05.000000000"))
 
 func main() {
-	//multipleUserTest()
-	simpleMockTest()
+	multipleUserTest()
+	//simpleMockTest()
 }
+
+var wg sync.WaitGroup
+
+const ArraySize = 5
 
 // User contains a user's information for every other implementation.
 type User struct {
@@ -43,10 +48,32 @@ type Auction struct {
 	currWinnerName string
 	currMaxBid     uint64
 	bidStep        uint64
-	latestBidTime  time.Time
-	startTime      time.Time
-	endTime        time.Time
+	latestBidTime  string
+	startTime      string
+	endTime        string
 	actionCount    uint64
+}
+
+// Bid is a datatype used to store bid interactions containing the bidding information.
+type Bid struct {
+	biddingID  uint64
+	bidderID   uint64
+	bidderName string
+	bidPrice   uint64
+	bidTime    string
+}
+
+type HashTable struct {
+	array [ArraySize]*linkedList
+}
+
+type linkedList struct {
+	head *linkedListNode
+}
+
+type linkedListNode struct {
+	key  Auction
+	next *linkedListNode
 }
 
 // Create new auction struct into the system
@@ -64,21 +91,12 @@ func createAuction(auctioneer User, initBid uint64, bidStep uint64, id uint64) A
 		currWinnerName: auctioneer.firstName,
 		currMaxBid:     initBid,
 		bidStep:        bidStep,
-		latestBidTime:  time.Now(),
-		startTime:      time.Now(),
-		endTime:        time.Now().Add(duration * time.Hour),
+		latestBidTime:  time.Now().Format(time.RFC3339Nano),
+		startTime:      time.Now().Format(time.RFC3339Nano),
+		endTime:        time.Now().Add(duration * time.Hour).Format(time.RFC3339Nano),
 		actionCount:    0,
 	}
 	return auction
-}
-
-// Bid is a datatype used to store bid interactions containing the bidding information.
-type Bid struct {
-	biddingID  uint64
-	bidderID   uint64
-	bidderName string
-	bidPrice   uint64
-	bidTime    time.Time
 }
 
 // Create bidding to be used to update the auction.
@@ -90,24 +108,25 @@ func createBid(user User, price uint64) Bid {
 		bidderID:   user.accountID,
 		bidderName: user.firstName,
 		bidPrice:   price,
-		bidTime:    time.Now(),
+		bidTime:    time.Now().Format(time.RFC3339Nano),
 	}
 	return bid
 }
 
 // Get the bidding processes created and compare it with the current auction.
-func updateAuction(b Bid, a Auction) Auction {
-
-	if b.bidTime.After(a.endTime) {
+func updateAuctionWinner(b Bid, a Auction) Auction {
+	fmt.Println("bid time ", b.bidTime)
+	fmt.Println("end time", a.endTime)
+	if b.bidTime > a.endTime {
 		fmt.Printf("Auction %d has already end. Bid placement is canceled\n", a.auctionID)
 		return a
 	}
 
 	// The printing results are used to debug different possibilities.
-	fmt.Println("The initial winning bid is bidded by user with the name of", a.currWinnerName, "with the price of", a.currMaxBid)
-	fmt.Println("The new incoming bid is bidded by user with the name of", b.bidderName, "with the price of", b.bidPrice)
-	fmt.Println("The previous bid was made at", a.latestBidTime, "while the new bid is bidded at time", b.bidTime)
-	fmt.Println("New bid is bidded after the previous bid:", b.bidTime.After(a.latestBidTime))
+	//fmt.Println("The initial winning bid is bidded by user with the name of", a.currWinnerName, "with the price of", a.currMaxBid)
+	//fmt.Println("The new incoming bid is bidded by user with the name of", b.bidderName, "with the price of", b.bidPrice)
+	//fmt.Println("The previous bid was made at", a.latestBidTime, "while the new bid is bidded at time", b.bidTime)
+	//fmt.Println("New bid is bidded after the previous bid:", time_test)
 
 	if (b.bidPrice > a.currMaxBid) && (b.bidPrice-a.currMaxBid) >= a.bidStep {
 		a.currMaxBid = b.bidPrice
@@ -115,27 +134,12 @@ func updateAuction(b Bid, a Auction) Auction {
 		a.latestBidTime = b.bidTime
 		a.currWinnerName = b.bidderName
 		a.actionCount++
-		//fmt.Println("Now,", a.currWinnerName, "is winning auction with the ID", a.auctionID)
-		//fmt.Println("Winning bid price:", a.currMaxBid)
-		//fmt.Println("Winning bidder :", a.currWinnerName)
 	}
 
 	time.Sleep(1 * time.Millisecond)
 
 	return a // where a is the updated auction.
 }
-
-/*
-func updateDB(x interface{}) string {
-	// get the input items to be transferred to the database
-	return reflect.TypeOf(x).String()
-}
-
-func displayAction(x interface{}) string {
-	// get the input items to be transferred through TCP sockets
-	return reflect.TypeOf(x).String()
-}
-*/
 
 // used to randomize integers for different test cases.
 func randomize(min int, max int) uint64 {
@@ -147,6 +151,131 @@ func randomize(min int, max int) uint64 {
 	return random
 }
 
+// Data Structure and Storage Function Declaration by Katisak in Milestone 1.
+// Data Structure and Storage Function Declaration by Katisak in Milestone 1.
+// Data Structure and Storage Function Declaration by Katisak in Milestone 1.
+// Data Structure and Storage Function Declaration by Katisak in Milestone 1.
+// Data Structure and Storage Function Declaration by Katisak in Milestone 1.
+// Data Structure and Storage Function Declaration by Katisak in Milestone 1.
+// Data Structure and Storage Function Declaration by Katisak in Milestone 1.
+
+// Function used to find the hash index of an object.,
+func hash(key Auction) uint64 {
+	return key.auctionID % ArraySize
+}
+
+// Functions to insert the auction data into a hash table and into the linked list nodes.
+
+// A behavior of a hash table object used to insert an auction into a hash function to properly placed it at the correct index.
+func (h *HashTable) insertAuctToHash(auction Auction) {
+	index := hash(auction)
+	h.array[index].insertAuctToLinkedList(auction)
+}
+
+// Continuation of hash function insertion to place it within a linked list as a node.
+func (b *linkedList) insertAuctToLinkedList(auction Auction) {
+	if !b.searchAuctIDLinkedList(auction) {
+		newNode := &linkedListNode{key: auction}
+		newNode.next = b.head
+		b.head = newNode
+		//fmt.Println(k)
+	} else {
+		//fmt.Println(k, "already exists")
+	}
+}
+
+// A behavior of a hash table object used to search of an auction object within the hash table using auction ID of each auction.
+func (h *HashTable) searchAuctIDHashTable(auction Auction) bool {
+	index := hash(auction)
+	return h.array[index].searchAuctIDLinkedList(auction)
+}
+
+// Continuation of seachAuctIDHashTable() function to continue the search within the linked list at the hash index location.
+func (b *linkedList) searchAuctIDLinkedList(auction Auction) bool { //For search the auction by using auctionID
+	currentNode := b.head
+	temp := auction.auctionID
+	for currentNode != nil {
+		if currentNode.key.auctionID == temp {
+			return true
+		}
+		currentNode = currentNode.next
+	}
+	return false
+}
+
+// A behavior of a hash table object used to search of an auction object within the hash table using auction name of each auction.
+func (h *HashTable) searchAuctNameInHash(key Auction) bool {
+	index := hash(key)
+	return h.array[index].searchAuctNameInLinkedList(key)
+}
+
+// Continuation of seachAuctNameHashTable() function to continue the search within the linked list at the hash index location.
+func (b *linkedList) searchAuctNameInLinkedList(k Auction) bool { //For checking when updated
+	currentNode := b.head
+	for currentNode != nil {
+		if currentNode.key == k {
+			return true
+		}
+		currentNode = currentNode.next
+	}
+	return false
+}
+
+// A behavior of a hash table object used to delete an auction within the table.
+func (h *HashTable) hashAccessDelete(key Auction) {
+	index := hash(key)
+	h.array[index].deleteAuctionInLinkedList(key)
+}
+
+func (b *linkedList) deleteAuctionInLinkedList(k Auction) {
+
+	if b.head.key.auctionID == k.auctionID {
+		b.head = b.head.next
+		return
+	}
+	previousNode := b.head
+	for previousNode.next != nil {
+		if previousNode.next.key.auctionID == k.auctionID {
+			previousNode.next = previousNode.next.next
+			return
+		}
+		previousNode = previousNode.next
+	}
+}
+
+func (h *HashTable) hashAccessUpdate(key Auction) {
+	index := hash(key)
+	h.array[index].updateAuctionInLinkedList(key)
+}
+
+func (b *linkedList) updateAuctionInLinkedList(k Auction) { //update auction
+	currentNode := b.head
+	temp := k.auctionID
+	for currentNode != nil {
+		if currentNode.key.auctionID == temp {
+			currentNode.key = k
+			fmt.Println(currentNode.key)
+			return
+		}
+		currentNode = currentNode.next
+	}
+}
+
+// Hash block allocation.
+func hashAllocate() *HashTable {
+	result := &HashTable{}
+	for i := range result.array {
+		result.array[i] = &linkedList{}
+	}
+	return result
+}
+
+// MOCK UP DATA CREATIONS ARE CREATED BELOW.
+// MOCK UP DATA CREATIONS ARE CREATED BELOW.
+// MOCK UP DATA CREATIONS ARE CREATED BELOW.
+// MOCK UP DATA CREATIONS ARE CREATED BELOW.
+// MOCK UP DATA CREATIONS ARE CREATED BELOW.
+// MOCK UP DATA CREATIONS ARE CREATED BELOW.
 // MOCK UP DATA CREATIONS ARE CREATED BELOW.
 
 // mockUserCreate() and simpleMockTest() are used to test a simple test case for the auction system.
@@ -175,15 +304,15 @@ func simpleMockTest() {
 	fmt.Println("This testAuction is being hosted by", testAuction.currWinnerName, "with the Auction ID of", testAuction.auctionID)
 
 	var bid1 = createBid(userArray[1], 600)
-	testAuction = updateAuction(bid1, testAuction)
+	testAuction = updateAuctionWinner(bid1, testAuction)
 	fmt.Println("As", bid1.bidderName, "bids with", bid1.bidPrice, ", now the current winner is", testAuction.currMaxBid, "with", testAuction.currWinnerName)
 
 	var bid2 = createBid(userArray[2], 5000) /*randomize(100, 2000)*/
-	testAuction = updateAuction(bid2, testAuction)
+	testAuction = updateAuctionWinner(bid2, testAuction)
 	fmt.Println("As", bid2.bidderName, "bids with", bid2.bidPrice, ", now the current winner is", testAuction.currMaxBid, "with", testAuction.currWinnerName)
 
 	var bid3 = createBid(userArray[3], 1500)
-	testAuction = updateAuction(bid3, testAuction)
+	testAuction = updateAuctionWinner(bid3, testAuction)
 	//fmt.Println("As", bid3.bidderName, "bids with", bid3.bidPrice, ", now the current winner is", testAuction.currMaxBid, "with", testAuction.currWinnerName)
 	//fmt.Println(testAuction.startTime)
 
@@ -192,6 +321,7 @@ func simpleMockTest() {
 
 // The functions below are used for testing for multiple users handling.
 // creation of multiple users, with those incremented counts being used to provide a unique identification.
+
 func multiUserCreate() []User {
 
 	var count uint64 = 0
@@ -220,12 +350,12 @@ func mockBidding(userArray []User, auctionArray []Auction) {
 	numberAuction := len(auctionArray) - 1
 	bidUserRandom := randomize(0, numberUser)
 	auctionNumberRandom := randomize(0, numberAuction)
-	auctionArray[auctionNumberRandom] = updateAuction(createBid(userArray[bidUserRandom], randomize(1, 10000)), auctionArray[auctionNumberRandom])
+	auctionArray[auctionNumberRandom] = updateAuctionWinner(createBid(userArray[bidUserRandom], randomize(1, 10000)), auctionArray[auctionNumberRandom])
 }
 
 func mockMultiBidding(userArray []User, auction Auction) Auction {
 
-	// updateAuction() for 1 updates : auction = updateAuction(createBid(userArray[bidUserRandom], randomize(1, 10000)), auction)
+	// updateAuctionWinner() for 1 updates : auction = updateAuctionWinner(createBid(userArray[bidUserRandom], randomize(1, 10000)), auction)
 
 	// datetime format for bidTime parameter is --- 2021-03-08 00:17:12.0959143 +0700 +07 m=+0.002279301 ---
 
@@ -236,12 +366,12 @@ func mockMultiBidding(userArray []User, auction Auction) Auction {
 	go func() {
 		fmt.Println("First bidding is being made")
 		newBidder1 := userArray[randomize(0, len(userArray)-1)]
-		updatedAuction2 <- updateAuction(createBid(newBidder1, randomize(0, 100000)), auction)
+		updatedAuction2 <- updateAuctionWinner(createBid(newBidder1, randomize(0, 100000)), auction)
 	}()
 	go func() {
 		fmt.Println("Second bidding is being made")
 		newBidder2 := userArray[randomize(0, len(userArray)-1)]
-		updatedAuction1 <- updateAuction(createBid(newBidder2, randomize(0, 100000)), auction)
+		updatedAuction1 <- updateAuctionWinner(createBid(newBidder2, randomize(0, 100000)), auction)
 	}()
 
 	updatedResult1, updatedResult2 := <-updatedAuction1, <-updatedAuction2
@@ -283,32 +413,3 @@ func multipleUserTest() {
 	result := mockMultiBidding(userArray, auctionArray[randomize(0, len(auctionArray)-1)])
 	fmt.Println(result.currMaxBid)
 }
-
-func addNewAuction(auctionArray *[]Auction, auction Auction) *[]Auction {
-
-	newAuctionArray := append(*auctionArray, auction)
-
-	return &newAuctionArray
-
-}
-
-func addNewUser(userArray *[]User, user User) *[]User {
-
-	newUserArray := append(*userArray, user)
-	return &newUserArray
-}
-
-/*
-func main() {
-
-    messages := make(chan string)
-
-    go func() { messages <- "ping" }()
-
-    msg := <-messages
-    fmt.Println(msg)
-}
-*/
-
-// youtube video link for milestone 2 preparation...
-// Goroutine Synchronization : Golang Practical Programming.

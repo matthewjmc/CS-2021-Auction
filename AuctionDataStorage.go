@@ -139,7 +139,7 @@ func (b *linkedList) updateAuctionInLinkedList(k Auction) { //update auction
 }
 
 // Hash block allocation.
-func Init() *HashTable {
+func hashAllocate() *HashTable {
 	result := &HashTable{}
 	for i := range result.array {
 		result.array[i] = &linkedList{}
@@ -147,8 +147,8 @@ func Init() *HashTable {
 	return result
 }
 
-func main() { //Testing the corrupt then trying access the same data at same time.
-	hashTable := Init()
+func multiDataAccess() { //Testing the corrupt then trying access the same data at same time.
+	hashTable := hashAllocate()
 	auction1 := Auction{
 		auctionID:     0,
 		auctioneerID:  123,
