@@ -11,7 +11,7 @@ import (
 )
 
 // Calling main
-func main() {
+func testTimeFormat() {
 
 	init := time.Now().Format(time.RFC3339Nano)
 	time.Sleep(1 * time.Second)

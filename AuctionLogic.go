@@ -14,8 +14,12 @@ import (
 //	fmt.Printf("The datetime data type is %T\n", currentTime.Format("2006-01-02 15:04:05.000000000"))
 
 func main() {
-	multipleUserTest()
-	//simpleMockTest()
+	//multipleUserTest()
+	//testTimeFormat()
+	for {
+		mainTimeline()
+	}
+
 }
 
 var wg sync.WaitGroup
@@ -24,16 +28,16 @@ const ArraySize = 5
 
 // User contains a user's information for every other implementation.
 type User struct {
-	firstName string
-	lastName  string
+	username  string
+	fullname  string
 	accountID uint64
 }
 
 // Create new users into the system
-func createUser(first string, last string, id uint64) User {
+func createUser(username string, fullname string, id uint64) User {
 
-	account := User{firstName: first}
-	account.lastName = last
+	account := User{username: username}
+	account.fullname = fullname
 	account.accountID = id // need some algorithm to uniquely randomize username id
 	// For first milestone, a counter is used to notate the number of users.
 	return account
@@ -56,11 +60,11 @@ type Auction struct {
 
 // Bid is a datatype used to store bid interactions containing the bidding information.
 type Bid struct {
-	biddingID  uint64
-	bidderID   uint64
-	bidderName string
-	bidPrice   uint64
-	bidTime    string
+	biddingID      uint64
+	bidderID       uint64
+	bidderUsername string
+	bidPrice       uint64
+	bidTime        string
 }
 
 type HashTable struct {
@@ -88,7 +92,7 @@ func createAuction(auctioneer User, initBid uint64, bidStep uint64, id uint64) A
 		auctioneerID:   auctioneer.accountID,
 		itemName:       itemName,
 		currWinnerID:   auctioneer.accountID,
-		currWinnerName: auctioneer.firstName,
+		currWinnerName: auctioneer.fullname,
 		currMaxBid:     initBid,
 		bidStep:        bidStep,
 		latestBidTime:  time.Now().Format(time.RFC3339Nano),
@@ -104,11 +108,11 @@ func createBid(user User, price uint64) Bid {
 	id := rand.Uint64()
 	bid := Bid{}
 	bid = Bid{
-		biddingID:  id,
-		bidderID:   user.accountID,
-		bidderName: user.firstName,
-		bidPrice:   price,
-		bidTime:    time.Now().Format(time.RFC3339Nano),
+		biddingID:      id,
+		bidderID:       user.accountID,
+		bidderUsername: user.username,
+		bidPrice:       price,
+		bidTime:        time.Now().Format(time.RFC3339Nano),
 	}
 	return bid
 }
@@ -132,7 +136,7 @@ func updateAuctionWinner(b Bid, a Auction) Auction {
 		a.currMaxBid = b.bidPrice
 		a.currWinnerID = b.bidderID
 		a.latestBidTime = b.bidTime
-		a.currWinnerName = b.bidderName
+		a.currWinnerName = b.bidderUsername
 		a.actionCount++
 	}
 
@@ -283,10 +287,10 @@ func hashAllocate() *HashTable {
 // Spawn mock up user accounts with some basic information.
 func mockUserCreate() []User {
 
-	var johnd = createUser("John", "Doe", 9921)
-	var alanr = createUser("Alan", "Rogers", 1547)
-	var stepb = createUser("Stephen", "Browns", 7812)
-	var geors = createUser("George", "Samuels", 3443)
+	var johnd = createUser("JohnD", "John Doe", 9921)
+	var alanr = createUser("AlanR", "Alan Rogers", 1547)
+	var stepb = createUser("StephenB", "Stephen Browns", 7812)
+	var geors = createUser("GeorgeS", "George Samuels", 3443)
 	mockUserArray := []User{johnd, alanr, stepb, geors}
 	return mockUserArray
 }
@@ -305,15 +309,15 @@ func simpleMockTest() {
 
 	var bid1 = createBid(userArray[1], 600)
 	testAuction = updateAuctionWinner(bid1, testAuction)
-	fmt.Println("As", bid1.bidderName, "bids with", bid1.bidPrice, ", now the current winner is", testAuction.currMaxBid, "with", testAuction.currWinnerName)
+	fmt.Println("As", bid1.bidderUsername, "bids with", bid1.bidPrice, ", now the current winner is", testAuction.currMaxBid, "with", testAuction.currWinnerName)
 
 	var bid2 = createBid(userArray[2], 5000) /*randomize(100, 2000)*/
 	testAuction = updateAuctionWinner(bid2, testAuction)
-	fmt.Println("As", bid2.bidderName, "bids with", bid2.bidPrice, ", now the current winner is", testAuction.currMaxBid, "with", testAuction.currWinnerName)
+	fmt.Println("As", bid2.bidderUsername, "bids with", bid2.bidPrice, ", now the current winner is", testAuction.currMaxBid, "with", testAuction.currWinnerName)
 
 	var bid3 = createBid(userArray[3], 1500)
 	testAuction = updateAuctionWinner(bid3, testAuction)
-	//fmt.Println("As", bid3.bidderName, "bids with", bid3.bidPrice, ", now the current winner is", testAuction.currMaxBid, "with", testAuction.currWinnerName)
+	//fmt.Println("As", bid3.bidderUsername, "bids with", bid3.bidPrice, ", now the current winner is", testAuction.currMaxBid, "with", testAuction.currWinnerName)
 	//fmt.Println(testAuction.startTime)
 
 	fmt.Println(testAuction.currWinnerName)
@@ -412,4 +416,38 @@ func multipleUserTest() {
 	fmt.Println("The time captured after completing the spawning is at", mockUpEnding)
 	result := mockMultiBidding(userArray, auctionArray[randomize(0, len(auctionArray)-1)])
 	fmt.Println(result.currMaxBid)
+}
+
+//// Milestone 2
+
+func mainTimeline() {
+	var command string
+
+	fmt.Println("Please state your action.")
+	fmt.Scanln(&command)
+
+	if command == "Create" {
+		report := make(chan User)
+		report_log := make(chan string)
+		go newCreateUser(report, report_log) // possible user spawning algorithm could be used to pass the users into the function for an easier goroutine.
+		newUser := <-report
+		log := <-report_log
+		fmt.Println(newUser, log)
+	}
+
+}
+
+//	c := make(chan int) // value of c is a point which the channel is located.
+//	fmt.Printf("type of c is %T\n", c) // %T is to provide the type
+
+func newCreateUser(report chan User, report_log chan string) {
+
+	count := randomize(1, 1000000)
+	newUser := createUser("testUsername"+fmt.Sprint(count), "test"+fmt.Sprint(count), randomize(100000, 999999))
+
+	// add user to insertUserToHashTable() ( to do list for 13th March )
+
+	report <- newUser // This line is used to notate new user created.
+	report_log <- "account has been created completely"
+
 }
