@@ -16,10 +16,12 @@ import (
 func main() {
 	//multipleUserTest()
 	//testTimeFormat()
-	for {
-		mainTimeline()
-	}
+	A := auctionAllocate()
+	U := userAllocate()
 
+	for {
+		mainTimeline(A, U)
+	}
 }
 
 var wg sync.WaitGroup
@@ -67,17 +69,30 @@ type Bid struct {
 	bidTime        string
 }
 
-type HashTable struct {
-	array [ArraySize]*linkedList
+type auctionHashTable struct {
+	array [ArraySize]*auctionLinkedList
 }
 
-type linkedList struct {
-	head *linkedListNode
+type auctionLinkedList struct {
+	head *auctionNode
 }
 
-type linkedListNode struct {
+type auctionNode struct {
 	key  Auction
-	next *linkedListNode
+	next *auctionNode
+}
+
+type userHashTable struct {
+	array [ArraySize]*userLinkedList
+}
+
+type userLinkedList struct {
+	head *userNode
+}
+
+type userNode struct {
+	key  User
+	next *userNode
 }
 
 // Create new auction struct into the system
@@ -163,23 +178,46 @@ func randomize(min int, max int) uint64 {
 // Data Structure and Storage Function Declaration by Katisak in Milestone 1.
 // Data Structure and Storage Function Declaration by Katisak in Milestone 1.
 
-// Function used to find the hash index of an object.,
-func hash(key Auction) uint64 {
+// Functions used to find the hash index of an object
+func hashAuction(key Auction) uint64 {
 	return key.auctionID % ArraySize
 }
+func hashUser(key User) uint64 {
+	return key.accountID % ArraySize
+}
 
-// Functions to insert the auction data into a hash table and into the linked list nodes.
+// Functions to insert the data into a hash table and into the linked list nodes of their corresponding datatypes.
 
 // A behavior of a hash table object used to insert an auction into a hash function to properly placed it at the correct index.
-func (h *HashTable) insertAuctToHash(auction Auction) {
-	index := hash(auction)
+func (h *auctionHashTable) insertAuctToHash(auction Auction) {
+	index := hashAuction(auction)
+
 	h.array[index].insertAuctToLinkedList(auction)
 }
 
 // Continuation of hash function insertion to place it within a linked list as a node.
-func (b *linkedList) insertAuctToLinkedList(auction Auction) {
+func (b *auctionLinkedList) insertAuctToLinkedList(auction Auction) {
 	if !b.searchAuctIDLinkedList(auction) {
-		newNode := &linkedListNode{key: auction}
+		newNode := &auctionNode{key: auction}
+		newNode.next = b.head
+		b.head = newNode
+		fmt.Println("The auction has been inserted properly.")
+		//fmt.Println(k)
+	} else {
+		//fmt.Println(k, "already exists")
+	}
+}
+
+// A behavior of a hash table object used to insert a user into a hash function to properly placed it at the correct index.
+func (h *userHashTable) insertUserToHash(user User) {
+	index := hashUser(user)
+	h.array[index].insertUserToLinkedList(user)
+}
+
+// Continuation of hash function insertion to place it within a linked list as a node.
+func (b *userLinkedList) insertUserToLinkedList(user User) {
+	if !b.searchUserIDLinkedList(user) {
+		newNode := &userNode{key: user}
 		newNode.next = b.head
 		b.head = newNode
 		//fmt.Println(k)
@@ -189,17 +227,37 @@ func (b *linkedList) insertAuctToLinkedList(auction Auction) {
 }
 
 // A behavior of a hash table object used to search of an auction object within the hash table using auction ID of each auction.
-func (h *HashTable) searchAuctIDHashTable(auction Auction) bool {
-	index := hash(auction)
+func (h *auctionHashTable) searchAuctIDHashTable(auction Auction) bool {
+	index := hashAuction(auction)
 	return h.array[index].searchAuctIDLinkedList(auction)
 }
 
 // Continuation of seachAuctIDHashTable() function to continue the search within the linked list at the hash index location.
-func (b *linkedList) searchAuctIDLinkedList(auction Auction) bool { //For search the auction by using auctionID
+func (b *auctionLinkedList) searchAuctIDLinkedList(auction Auction) bool { //For search the auction by using auctionID
 	currentNode := b.head
 	temp := auction.auctionID
 	for currentNode != nil {
 		if currentNode.key.auctionID == temp {
+			fmt.Println("The auction is found in the repository., searched by ID")
+			return true
+		}
+		currentNode = currentNode.next
+	}
+	return false
+}
+
+// A behavior of a hash table object used to search of an user object within the hash table using account ID of each auction.
+func (h *userHashTable) searchUserIDHashTable(user User) bool {
+	index := hashUser(user)
+	return h.array[index].searchUserIDLinkedList(user)
+}
+
+// Continuation of seachUserIDHashTable() function to continue the search within the linked list at the hash index location.
+func (b *userLinkedList) searchUserIDLinkedList(user User) bool { //For search the user by using accouintID
+	currentNode := b.head
+	temp := user.accountID
+	for currentNode != nil {
+		if currentNode.key.accountID == temp {
 			return true
 		}
 		currentNode = currentNode.next
@@ -208,16 +266,17 @@ func (b *linkedList) searchAuctIDLinkedList(auction Auction) bool { //For search
 }
 
 // A behavior of a hash table object used to search of an auction object within the hash table using auction name of each auction.
-func (h *HashTable) searchAuctNameInHash(key Auction) bool {
-	index := hash(key)
+func (h *auctionHashTable) searchAuctNameInHash(key Auction) bool {
+	index := hashAuction(key)
 	return h.array[index].searchAuctNameInLinkedList(key)
 }
 
 // Continuation of seachAuctNameHashTable() function to continue the search within the linked list at the hash index location.
-func (b *linkedList) searchAuctNameInLinkedList(k Auction) bool { //For checking when updated
+func (b *auctionLinkedList) searchAuctNameInLinkedList(k Auction) bool { //For checking when updated
 	currentNode := b.head
 	for currentNode != nil {
 		if currentNode.key == k {
+			fmt.Println("The auction is found in the repository. searched by name")
 			return true
 		}
 		currentNode = currentNode.next
@@ -225,13 +284,12 @@ func (b *linkedList) searchAuctNameInLinkedList(k Auction) bool { //For checking
 	return false
 }
 
-// A behavior of a hash table object used to delete an auction within the table.
-func (h *HashTable) hashAccessDelete(key Auction) {
-	index := hash(key)
+// A behavior of a hash table object used to delete a user within the table.
+func (h *auctionHashTable) auctionHashAccessDelete(key Auction) {
+	index := hashAuction(key)
 	h.array[index].deleteAuctionInLinkedList(key)
 }
-
-func (b *linkedList) deleteAuctionInLinkedList(k Auction) {
+func (b *auctionLinkedList) deleteAuctionInLinkedList(k Auction) {
 
 	if b.head.key.auctionID == k.auctionID {
 		b.head = b.head.next
@@ -247,16 +305,56 @@ func (b *linkedList) deleteAuctionInLinkedList(k Auction) {
 	}
 }
 
-func (h *HashTable) hashAccessUpdate(key Auction) {
-	index := hash(key)
+func (h *userHashTable) userHashAccessDelete(key User) {
+	index := hashUser(key)
+	h.array[index].deleteUserInLinkedList(key)
+}
+
+func (b *userLinkedList) deleteUserInLinkedList(k User) {
+
+	if b.head.key.accountID == k.accountID {
+		b.head = b.head.next
+		return
+	}
+	previousNode := b.head
+	for previousNode.next != nil {
+		if previousNode.next.key.accountID == k.accountID {
+			previousNode.next = previousNode.next.next
+			return
+		}
+		previousNode = previousNode.next
+	}
+}
+
+func (h *auctionHashTable) auctionHashAccessUpdate(key Auction) {
+	index := hashAuction(key)
 	h.array[index].updateAuctionInLinkedList(key)
 }
 
-func (b *linkedList) updateAuctionInLinkedList(k Auction) { //update auction
+func (b *auctionLinkedList) updateAuctionInLinkedList(k Auction) { //update auction
 	currentNode := b.head
 	temp := k.auctionID
 	for currentNode != nil {
 		if currentNode.key.auctionID == temp {
+			currentNode.key = k
+			fmt.Println(currentNode.key)
+			fmt.Println("updateAuction completed")
+			return
+		}
+		currentNode = currentNode.next
+	}
+}
+
+func (h *userHashTable) userHashAccessUpdate(key User) {
+	index := hashUser(key)
+	h.array[index].updateUserInLinkedList(key)
+}
+
+func (b *userLinkedList) updateUserInLinkedList(k User) { //update user
+	currentNode := b.head
+	temp := k.accountID
+	for currentNode != nil {
+		if currentNode.key.accountID == temp {
 			currentNode.key = k
 			fmt.Println(currentNode.key)
 			return
@@ -266,10 +364,19 @@ func (b *linkedList) updateAuctionInLinkedList(k Auction) { //update auction
 }
 
 // Hash block allocation.
-func hashAllocate() *HashTable {
-	result := &HashTable{}
+func auctionAllocate() *auctionHashTable {
+	result := &auctionHashTable{}
 	for i := range result.array {
-		result.array[i] = &linkedList{}
+		result.array[i] = &auctionLinkedList{}
+	}
+	return result
+}
+
+// Hash block allocation.
+func userAllocate() *userHashTable {
+	result := &userHashTable{}
+	for i := range result.array {
+		result.array[i] = &userLinkedList{}
 	}
 	return result
 }
@@ -410,7 +517,7 @@ func multipleUserTest() {
 		}
 	*/
 
-	fmt.Println("This marks the end of mock data setup\n")
+	fmt.Println("This marks the end of mock data setup")
 	mockUpEnding := time.Now()
 	fmt.Println("The initial time captured before the spawning is at", mockUpStart)
 	fmt.Println("The time captured after completing the spawning is at", mockUpEnding)
@@ -419,35 +526,95 @@ func multipleUserTest() {
 }
 
 //// Milestone 2
+//// Milestone 2
+//// Milestone 2
+//// Milestone 2
+//// Milestone 2
+//// Milestone 2
+//// Milestone 2
+//// Milestone 2
+//// Milestone 2
+//// Milestone 2
+//// Milestone 2
+//// Milestone 2
 
-func mainTimeline() {
+func mainTimeline(A *auctionHashTable, U *userHashTable) {
 	var command string
 
 	fmt.Println("Please state your action.")
 	fmt.Scanln(&command)
+	testDummy := Auction{auctionID: 992129} // using for test purposes
 
-	if command == "Create" {
+	if command == "User" {
 		report := make(chan User)
 		report_log := make(chan string)
-		go newCreateUser(report, report_log) // possible user spawning algorithm could be used to pass the users into the function for an easier goroutine.
+		go createUserMain(U, report, report_log) // possible user spawning algorithm could be used to pass the users into the function for an easier goroutine.
 		newUser := <-report
 		log := <-report_log
 		fmt.Println(newUser, log)
+	} else if command == "Auction" {
+		report := make(chan Auction)
+		report_log := make(chan string)
+		go createAuctionMain(A, report, report_log) // possible user spawning algorithm could be used to pass the users into the function for an easier goroutine.
+		newAuction := <-report
+		log := <-report_log
+		fmt.Println(newAuction, log)
+	} else if command == "bid" {
+		newUser := createUser("tagun9921", "tagun", 9921)
+		newAuction := createAuction(newUser, randomize(100, 10000), randomize(100, 1000), 992129)
+		report := make(chan Auction)
+		report_log := make(chan string)
+		go makeBidMain(A, report, report_log, newAuction) // possible user spawning algorithm could be used to pass the users into the function for an easier goroutine.
+		finalAuction := <-report
+		log := <-report_log
+		fmt.Println(finalAuction, log)
+	} else if command == "insert" {
+		A.insertAuctToHash(testDummy)
+	} else if command == "seek" {
+		A.searchAuctNameInHash(testDummy)
 	}
-
 }
 
 //	c := make(chan int) // value of c is a point which the channel is located.
 //	fmt.Printf("type of c is %T\n", c) // %T is to provide the type
 
-func newCreateUser(report chan User, report_log chan string) {
+func createUserMain(h *userHashTable, report chan User, report_log chan string) {
 
 	count := randomize(1, 1000000)
 	newUser := createUser("testUsername"+fmt.Sprint(count), "test"+fmt.Sprint(count), randomize(100000, 999999))
 
-	// add user to insertUserToHashTable() ( to do list for 13th March )
-
+	h.insertUserToHash(newUser)
 	report <- newUser // This line is used to notate new user created.
 	report_log <- "account has been created completely"
+
+}
+
+func createAuctionMain(h *auctionHashTable, report chan Auction, report_log chan string) {
+
+	count := randomize(1, 1000000)
+	newUser := createUser("testUsername"+fmt.Sprint(count), "test"+fmt.Sprint(count), randomize(100000, 999999))
+	newAuction := createAuction(newUser, randomize(100, 10000), randomize(100, 1000), randomize(100000, 999999))
+
+	h.insertAuctToHash(newAuction)
+
+	report <- newAuction // This line is used to notate new user created.
+	report_log <- "auction has been created completely"
+
+}
+
+func makeBidMain(h *auctionHashTable, report chan Auction, report_log chan string, target Auction) {
+
+	count := randomize(1, 1000000)
+	newUser := createUser("testUsername"+fmt.Sprint(count), "test"+fmt.Sprint(count), randomize(100000, 999999))
+	newBid := createBid(newUser, randomize(100, 9999))
+
+	// access for auction object to be updated at the target variable.
+
+	newAuction := updateAuctionWinner(newBid, target)
+	h.auctionHashAccessUpdate(newAuction)
+	h.searchAuctIDHashTable(newAuction)
+
+	report <- newAuction // This line is used to notate new user created.
+	report_log <- "auction has been updated completely"
 
 }
