@@ -559,6 +559,7 @@ func mainTimeline(A *auctionHashTable, U *userHashTable) {
 		newAuction := <-report
 		log := <-report_log
 		fmt.Println(newAuction, log)
+		fmt.Println(A.searchAuctIDHashTable(newAuction))
 	} else if command == "bid" {
 		newUser := createUser("tagun9921", "tagun", 9921)
 		newAuction := createAuction(newUser, randomize(100, 10000), randomize(100, 1000), 992129)
@@ -593,7 +594,7 @@ func createAuctionMain(h *auctionHashTable, report chan Auction, report_log chan
 
 	count := randomize(1, 1000000)
 	newUser := createUser("testUsername"+fmt.Sprint(count), "test"+fmt.Sprint(count), randomize(100000, 999999))
-	newAuction := createAuction(newUser, randomize(100, 10000), randomize(100, 1000), randomize(100000, 999999))
+	newAuction := createAuction(newUser, randomize(100, 10000), randomize(100, 1000), 992129)
 
 	h.insertAuctToHash(newAuction)
 
