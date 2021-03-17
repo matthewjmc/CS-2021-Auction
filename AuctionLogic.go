@@ -437,9 +437,11 @@ func mainTimeline(A *auctionHashTable, U *userHashTable) {
 
 	if command == "Create" || command == "create" {
 
+		var createcommand string
 		fmt.Println("What would you like to create?")
+		fmt.Scanln(&createcommand)
 
-		if command == "User" || command == "user" {
+		if createcommand == "User" || createcommand == "user" {
 			report := make(chan User)
 			report_log := make(chan string)
 			go createUserMain(U, report, report_log) // possible user spawning algorithm could be used to pass the users into the function for an easier goroutine.
@@ -447,15 +449,16 @@ func mainTimeline(A *auctionHashTable, U *userHashTable) {
 			log := <-report_log
 			fmt.Println(log)
 
-		} else if command == "Auction" || command == "auction" {
+		} else if createcommand == "Auction" || createcommand == "auction" {
 			report := make(chan Auction)
 			report_log := make(chan string)
 			go createAuctionMain(A, report, report_log) // possible user spawning algorithm could be used to pass the users into the function for an easier goroutine.
-			// newAuction := <-report
+			newAuction := <-report
 			log := <-report_log
-			fmt.Println(log)
+			fmt.Println(newAuction, log)
 			//A.searchAuctIDHashTable(newAuction.auctionID)
 		}
+
 	} else if command == "bid" {
 
 		//newUser := createUser("tagun9921", "tagun", 9921) // for actual mock-up user, a selection for each timeline iteration must be done.
@@ -479,8 +482,8 @@ func mainTimeline(A *auctionHashTable, U *userHashTable) {
 	} else if command == "insert" {
 		A.insertAuctToHash(&testDummy)
 
-	} else if command == "seek" {
-		A.searchAuctNameInHash(testDummy)
+	} else if command == "search" {
+		A.searchAuctIDHashTable(992129)
 	}
 }
 
@@ -498,13 +501,13 @@ func createUserMain(h *userHashTable, report chan User, report_log chan string) 
 
 }
 
-func createAuctionMain(h *auctionHashTable, report chan Auction, report_log chan string) {
+func createAuctionMain(A *auctionHashTable, report chan Auction, report_log chan string) {
 
 	count := randomize(1, 1000000)
 	newUser := createUser("testUsername"+fmt.Sprint(count), "test"+fmt.Sprint(count), randomize(100000, 999999))
 	newAuction := createAuction(newUser, randomize(100, 10000), randomize(100, 1000), 992129)
 
-	h.insertAuctToHash(newAuction.createdAuction)
+	A.insertAuctToHash(newAuction.createdAuction)
 
 	report <- *newAuction.createdAuction // This line is used to notate new user created.
 	report_log <- "auction has been created completely"
