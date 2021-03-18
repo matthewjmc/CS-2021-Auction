@@ -1,3 +1,12 @@
+package main
+
+import (
+	"fmt"
+	"sync"
+)
+
+// This is the file composed of different data structure used within the system.
+
 var wg sync.WaitGroup
 
 const ArraySize = 1000

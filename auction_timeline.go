@@ -6,11 +6,7 @@ import (
 	"time"
 )
 
-///// Channel Creation
-//	c := make(chan int) // value of c is a point which the channel is located.
-//	fmt.Printf("type of c is %T\n", c) // %T is to provide the type
-
-//	fmt.Printf("The datetime data type is %T\n", currentTime.Format("2006-01-02 15:04:05.000000000"))
+// auction_timeline is a file related to the actual timeline for main function calling.
 
 func main() {
 	//multipleUserTest()

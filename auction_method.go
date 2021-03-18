@@ -6,6 +6,8 @@ import (
 	"time"
 )
 
+// This file composed of the methods used within the main timeline function to do different tasks.
+
 func createAuction(auctioneer User, initBid uint64, bidStep uint64, id uint64) *auctionReport {
 
 	var itemName string = "testItem"

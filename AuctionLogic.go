@@ -7,6 +7,9 @@ import (
 	"time"
 )
 
+// AuctionLogic is a file composed of Tagun's and Katisak's code altogether.
+// The file is also being separated into 3 files which are auction_method, auction_timeline, data_structure.
+
 func main() {
 	//multipleUserTest()
 	//testTimeFormat()
