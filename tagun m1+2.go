@@ -122,7 +122,7 @@ func mainTimeline(A *auctionHashTable, U *userHashTable) {
 			report := make(chan User)
 			report_log := make(chan string)
 			go createUserMain(U, report, report_log) // possible user spawning algorithm could be used to pass the users into the function for an easier goroutine.
-			// newUser := <-report
+			newUser := <-report
 			log := <-report_log
 			fmt.Println(log)
 
@@ -160,3 +160,55 @@ func mainTimeline(A *auctionHashTable, U *userHashTable) {
 	}
 }
 
+func createUserMain(h *userHashTable, report chan User, report_log chan string) {
+
+	count := randomize(1, 1000000)
+	newUser := createUser("testUsername"+fmt.Sprint(count), "test"+fmt.Sprint(count), randomize(100000, 999999))
+
+	h.insertUserToHash(newUser)
+
+	report <- newUser // This line is used to notate new user created.
+	report_log <- "account has been created completely"
+
+}
+
+func createAuctionMain(A *auctionHashTable, report chan Auction, report_log chan string) {
+
+	count := randomize(1, 1000000)
+	newUser := createUser("testUsername"+fmt.Sprint(count), "test"+fmt.Sprint(count), randomize(100000, 999999))
+	newAuction := createAuction(newUser, randomize(100, 10000), randomize(100, 1000), 992129)
+
+	A.insertAuctToHash(newAuction.createdAuction)
+
+	report <- *newAuction.createdAuction // This line is used to notate new user created.
+	report_log <- "auction has been created completely"
+
+}
+
+func makeBidMain(h *auctionHashTable, report chan Auction, report_log chan string, targetid uint64) {
+
+	count := randomize(1, 1000000)                                                                               // for testing
+	newUser := createUser("testUsername"+fmt.Sprint(count), "test"+fmt.Sprint(count), randomize(100000, 999999)) // for testing
+
+	newBid := createBid(newUser, randomize(100, 9999))
+
+	// access for auction object to be updated at the target variable.
+	target := h.accessHashAuction(targetid)
+	fmt.Println("Previous Winner:", target.currWinnerName)
+	target.updateAuctionWinner(newBid)
+	h.auctionHashAccessUpdate(*target)
+	fmt.Println("Current Winner:", target.currWinnerName)
+	report <- *target // This line is used to notate new user created.
+	report_log <- "auction has been updated completely"
+
+}
+
+// used to randomize integers for different test cases.
+func randomize(min int, max int) uint64 {
+	rand.Seed(time.Now().UnixNano())
+	var check int = rand.Intn(max-min+1) + min
+	//fmt.Println(check)
+	random := uint64(check)
+
+	return random
+}

@@ -38,9 +38,9 @@ func mainTimeline(A *auctionHashTable, U *userHashTable) {
 			report := make(chan User)
 			report_log := make(chan string)
 			go createUserMain(U, report, report_log) // possible user spawning algorithm could be used to pass the users into the function for an easier goroutine.
-			// newUser := <-report
+			newUser := <-report
 			log := <-report_log
-			fmt.Println(log)
+			fmt.Println(log, newUser)
 
 		} else if createcommand == "Auction" || createcommand == "auction" {
 			report := make(chan Auction)
@@ -72,7 +72,7 @@ func mainTimeline(A *auctionHashTable, U *userHashTable) {
 			fmt.Println(finalAuction, log)
 		}
 	} else if command == "search" {
-		A.searchAuctIDHashTable(992129)
+		fmt.Println(A.searchAuctIDHashTable(992129))
 	}
 }
 
