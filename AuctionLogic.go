@@ -371,15 +371,13 @@ func userAllocate() *userHashTable {
 	return result
 }
 
-//	c := make(chan int) // value of c is a point which the channel is located.
-//	fmt.Printf("type of c is %T\n", c) // %T is to provide the type
-
 func createUserMain(h *userHashTable, report chan User, report_log chan string) {
 
 	count := randomize(1, 1000000)
 	newUser := createUser("testUsername"+fmt.Sprint(count), "test"+fmt.Sprint(count), randomize(100000, 999999))
 
 	h.insertUserToHash(newUser)
+
 	report <- newUser // This line is used to notate new user created.
 	report_log <- "account has been created completely"
 
