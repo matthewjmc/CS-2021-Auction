@@ -23,6 +23,8 @@ type Package struct {
 	}
 }
 
+var serverIP = "10.104.0.9:19530"
+
 func main() {
 	arguments := os.Args
 	args, _ := strconv.Atoi(arguments[1])
@@ -37,6 +39,7 @@ func main() {
 
 		go handleCon(user)
 		n++
+		fmt.Println(n)
 	}
 	for {
 
