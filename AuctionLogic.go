@@ -1,4 +1,4 @@
-package main
+package AuctionSystem
 
 import (
 	. "CS-2021-Auction/AuctionSystem"
@@ -10,6 +10,7 @@ import (
 // AuctionLogic is a file composed of Tagun's and Katisak's code altogether.
 // The file is also being separated into 3 files which are auction_method, auction_timeline, data_structure.
 
+/*
 func main() {
 	//multipleUserTest()
 	//testTimeFormat()
@@ -17,44 +18,33 @@ func main() {
 	U := UserAllocate()
 	// modification of memory allocation to be dynamically allocating.
 
-	for {
-		mainTimeline(A, U)
-	}
-}
+	mainTimeline(A, U)
 
-func mainTimeline(A *AuctionHashTable, U *UserHashTable) {
-	var command string
+}*/
 
-	fmt.Println("Please state your action.")
-	fmt.Scanln(&command)
+//
+func mainTimeline(A *AuctionHashTable, U *UserHashTable, command string) {
 
-	if command == "Create" || command == "create" {
+	var searchID uint64
 
-		var createcommand string
-		fmt.Println("What would you like to create?")
-		fmt.Scanln(&createcommand)
+	if command == "User" || command == "user" {
+		report := make(chan User)
+		report_log := make(chan string)
+		go createUserMain(U, report, report_log) // possible user spawning algorithm could be used to pass the users into the function for an easier goroutine.
+		newUser := <-report
+		log := <-report_log
+		fmt.Println(log, newUser)
 
-		if createcommand == "User" || createcommand == "user" {
-			report := make(chan User)
-			report_log := make(chan string)
-			go createUserMain(U, report, report_log) // possible user spawning algorithm could be used to pass the users into the function for an easier goroutine.
-			newUser := <-report
-			log := <-report_log
-			fmt.Println(log, newUser)
-
-		} else if createcommand == "Auction" || createcommand == "auction" {
-			report_id := make(chan uint64)
-			report_log := make(chan string)
-			go createAuctionMain(A, report_id, report_log) // possible user spawning algorithm could be used to pass the users into the function for an easier goroutine.
-			newAuction := <-report_id
-			log := <-report_log
-			fmt.Println(newAuction, log)
-			//A.searchAuctIDHashTable(newAuction.auctionID)
-		}
+	} else if command == "Auction" || command == "auction" {
+		report_id := make(chan uint64)
+		report_log := make(chan string)
+		go createAuctionMain(A, report_id, report_log) // possible user spawning algorithm could be used to pass the users into the function for an easier goroutine.
+		newAuction := <-report_id
+		log := <-report_log
+		fmt.Println(newAuction, log)
+		//A.searchAuctIDHashTable(newAuction.auctionID)
 
 	} else if command == "bid" {
-
-		//newUser := createUser("tagun9921", "tagun", 9921) // for actual mock-up user, a selection for each timeline iteration must be done.
 
 		var targetedAuctionID uint64
 		fmt.Println("What is your target auction ID in the system?")
@@ -66,14 +56,16 @@ func mainTimeline(A *AuctionHashTable, U *UserHashTable) {
 			// targetAuction := createAuction(newUser, randomize(100, 10000), randomize(100, 1000), 992129) initially, used to
 			report_price := make(chan uint64)
 			report_log := make(chan string)
-			go makeBidMain(A, report_price, report_log, 992129) // possible user spawning algorithm could be used to pass the users into the function for an easier goroutine.
+			go makeBidMain(A, report_price, report_log, searchID) // possible user spawning algorithm could be used to pass the users into the function for an easier goroutine.
 			finalAuction := <-report_price
 			log := <-report_log
 			fmt.Println(finalAuction, log)
 		}
+
 	} else if command == "search" {
-		fmt.Println(A.SearchAuctIDHashTable(992129))
+		fmt.Println(A.SearchAuctIDHashTable(searchID))
 	}
+
 }
 
 var wg sync.WaitGroup
