@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net"
 	"sync"
 )
@@ -31,13 +30,14 @@ func main() {
 }
 
 func serverInit() {
-	var wg sync.WaitGroup                      //Ensure Data Integrity
-	stream, err := net.Listen("tcp", ":19530") //Listen at port 19530
+	var wg sync.WaitGroup                       //Ensure Data Integrity
+	stream, err := net.Listen("tcp4", ":19530") //Listen at port 19530
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 	defer stream.Close()
+	n := 1
 	for {
 		con, err := stream.Accept()
 		if err != nil {
@@ -46,6 +46,8 @@ func serverInit() {
 		}
 		wg.Add(1)
 		go requestHandle(con, &wg)
+		fmt.Println(n)
+		n++
 		wg.Wait()
 	}
 }
@@ -56,12 +58,14 @@ func requestHandle(con net.Conn, wg *sync.WaitGroup) { //Check make Sure other t
 	defer con.Close()
 	for {
 		rawdata, err := bufio.NewReader(con).ReadString('\n')
-		if err != nil && err != io.EOF {
+		//fmt.Println(rawdata)
+		if err != nil {
 			fmt.Println(err)
-			break
+			return
 		}
 		if !state {
 			json.Unmarshal([]byte(rawdata), &received)
+			//fmt.Println(received)
 			addUsr(con, received.AuctionID, received.UserID)
 			wg.Done()
 			state = true
@@ -69,8 +73,8 @@ func requestHandle(con net.Conn, wg *sync.WaitGroup) { //Check make Sure other t
 		// else if received.Command == "Update" {
 		// 	_updateClient(received.AuctionID,)
 		// }
-
 	}
+	//con.Close()
 }
 
 func addUsr(con net.Conn, aID int, uID int) {
