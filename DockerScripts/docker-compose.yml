@@ -37,7 +37,7 @@ services:
   go1:
     image: golang:1.8-alpine
     container_name: goDriver1
-    command: "go run clientSpawn.go 28000"
+    command: "go run clientSpawn.go 2000"
     volumes:
       - $GODIR:/go/src/go-with-compose
     working_dir: /go/src/go-with-compose
@@ -48,7 +48,7 @@ services:
   go2:
     image: golang:1.8-alpine
     container_name: goDriver2
-    command: "go run clientSpawn.go 28000"
+    command: "go run clientSpawn.go 2000"
     volumes:
       - $GODIR:/go/src/go-with-compose
     working_dir: /go/src/go-with-compose
@@ -59,7 +59,7 @@ services:
   go3:
     image: golang:1.8-alpine
     container_name: goDriver3
-    command: "go run clientSpawn.go 28000"
+    command: "go run clientSpawn.go 2000"
     volumes:
       - $GODIR:/go/src/go-with-compose
     working_dir: /go/src/go-with-compose
@@ -70,7 +70,7 @@ services:
   go4:
     image: golang:1.8-alpine
     container_name: goDriver4
-    command: "go run clientSpawn.go 28000"
+    command: "go run clientSpawn.go 2000"
     volumes:
       - $GODIR:/go/src/go-with-compose
     working_dir: /go/src/go-with-compose
@@ -81,7 +81,7 @@ services:
   go5:
     image: golang:1.8-alpine
     container_name: goDriver5
-    command: "go run clientSpawn.go 28000"
+    command: "go run clientSpawn.go 2000"
     volumes:
       - $GODIR:/go/src/go-with-compose
     working_dir: /go/src/go-with-compose
