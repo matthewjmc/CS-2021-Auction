@@ -1,10 +1,5 @@
-package main
 
-import (
-	"fmt"
-)
 
-// auction_timeline is a file related to the actual timeline for main function calling.
 
 func main() {
 	//multipleUserTest()
@@ -17,6 +12,7 @@ func main() {
 		mainTimeline(A, U)
 	}
 }
+
 func mainTimeline(A *auctionHashTable, U *userHashTable) {
 	var command string
 
@@ -33,15 +29,15 @@ func mainTimeline(A *auctionHashTable, U *userHashTable) {
 			report := make(chan User)
 			report_log := make(chan string)
 			go createUserMain(U, report, report_log) // possible user spawning algorithm could be used to pass the users into the function for an easier goroutine.
-			// newUser := <-report
+			newUser := <-report
 			log := <-report_log
-			fmt.Println(log)
+			fmt.Println(log, newUser)
 
 		} else if createcommand == "Auction" || createcommand == "auction" {
-			report := make(chan Auction)
+			report_id := make(chan uint64)
 			report_log := make(chan string)
-			go createAuctionMain(A, report, report_log) // possible user spawning algorithm could be used to pass the users into the function for an easier goroutine.
-			newAuction := <-report
+			go createAuctionMain(A, report_id, report_log) // possible user spawning algorithm could be used to pass the users into the function for an easier goroutine.
+			newAuction := <-report_id
 			log := <-report_log
 			fmt.Println(newAuction, log)
 			//A.searchAuctIDHashTable(newAuction.auctionID)
@@ -67,6 +63,6 @@ func mainTimeline(A *auctionHashTable, U *userHashTable) {
 			fmt.Println(finalAuction, log)
 		}
 	} else if command == "search" {
-		A.searchAuctIDHashTable(992129)
+		fmt.Println(A.searchAuctIDHashTable(992129))
 	}
 }

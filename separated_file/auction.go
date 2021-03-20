@@ -1,34 +1,8 @@
-package main
-
-import (
-	"fmt"
-	"sync"
-)
-
-// This is the file composed of different data structure used within the system.
 
 var wg sync.WaitGroup
 
 const ArraySize = 1000
 
-// User contains a user's information for every other implementation.
-type User struct {
-	username  string
-	fullname  string
-	accountID uint64
-}
-
-// Create new users into the system
-func createUser(username string, fullname string, id uint64) User {
-
-	account := User{username: username}
-	account.fullname = fullname
-	account.accountID = id // need some algorithm to uniquely randomize username id
-	// For first milestone, a counter is used to notate the number of users.
-	return account
-}
-
-// Auction stores all information used to declare the auction current status.
 type Auction struct {
 	auctionID      uint64
 	auctioneerID   uint64
@@ -41,15 +15,6 @@ type Auction struct {
 	startTime      string
 	endTime        string
 	actionCount    uint64
-}
-
-// Bid is a datatype used to store bid interactions containing the bidding information.
-type Bid struct {
-	biddingID      uint64
-	bidderID       uint64
-	bidderUsername string
-	bidPrice       uint64
-	bidTime        string
 }
 
 type auctionHashTable struct {
@@ -65,19 +30,6 @@ type auctionNode struct {
 	next *auctionNode
 }
 
-type userHashTable struct {
-	array [ArraySize]*userLinkedList
-}
-
-type userLinkedList struct {
-	head *userNode
-}
-
-type userNode struct {
-	key  User
-	next *userNode
-}
-
 type auctionReport struct {
 	createdAuction     *Auction
 	created_auction_id uint64
@@ -86,13 +38,15 @@ type auctionReport struct {
 func hashAuction(targetID uint64) uint64 {
 	return targetID % ArraySize
 }
-func hashUser(key User) uint64 {
-	return key.accountID % ArraySize
+
+func auctionAllocate() *auctionHashTable {
+	result := &auctionHashTable{}
+	for i := range result.array {
+		result.array[i] = &auctionLinkedList{}
+	}
+	return result
 }
 
-// Functions to insert the data into a hash table and into the linked list nodes of their corresponding datatypes.
-
-// A behavior of a hash table object used to insert an auction into a hash function to properly placed it at the correct index.
 func (h *auctionHashTable) insertAuctToHash(auction *Auction) {
 	index := hashAuction(auction.auctionID)
 	h.array[index].insertAuctToLinkedList(*auction)
@@ -107,24 +61,6 @@ func (b *auctionLinkedList) insertAuctToLinkedList(auction Auction) {
 		fmt.Println("The auction has been inserted properly.")
 	} else {
 		fmt.Println("The created auction already exists")
-	}
-}
-
-// A behavior of a hash table object used to insert a user into a hash function to properly placed it at the correct index.
-func (h *userHashTable) insertUserToHash(user User) {
-	index := hashUser(user)
-	h.array[index].insertUserToLinkedList(user)
-}
-
-// Continuation of hash function insertion to place it within a linked list as a node.
-func (b *userLinkedList) insertUserToLinkedList(user User) {
-	if !b.searchUserIDLinkedList(user) {
-		newNode := &userNode{key: user}
-		newNode.next = b.head
-		b.head = newNode
-		//fmt.Println(k)
-	} else {
-		//fmt.Println(k, "already exists")
 	}
 }
 
@@ -144,26 +80,6 @@ func (b *auctionLinkedList) searchAuctIDLinkedList(auctionid uint64) bool { //Fo
 		currentNode = currentNode.next
 	}
 	fmt.Println("There is no function with that ID in the memory.")
-	return false
-}
-
-// A behavior of a hash table object used to search of an user object within the hash table using account ID of each auction.
-func (h *userHashTable) searchUserIDHashTable(user User) bool {
-	index := hashUser(user)
-	return h.array[index].searchUserIDLinkedList(user)
-}
-
-// Continuation of seachUserIDHashTable() function to continue the search within the linked list at the hash index location.
-func (b *userLinkedList) searchUserIDLinkedList(user User) bool { //For search the user by using accouintID
-	currentNode := b.head
-	temp := user.accountID
-	for currentNode != nil {
-		if currentNode.key.accountID == temp {
-			return true
-		}
-		currentNode = currentNode.next
-	}
-	fmt.Println("There is no auction with that ID in the memory.")
 	return false
 }
 
@@ -226,27 +142,6 @@ func (b *auctionLinkedList) deleteAuctionInLinkedList(k Auction) {
 	}
 }
 
-func (h *userHashTable) userHashAccessDelete(key User) {
-	index := hashUser(key)
-	h.array[index].deleteUserInLinkedList(key)
-}
-
-func (b *userLinkedList) deleteUserInLinkedList(k User) {
-
-	if b.head.key.accountID == k.accountID {
-		b.head = b.head.next
-		return
-	}
-	previousNode := b.head
-	for previousNode.next != nil {
-		if previousNode.next.key.accountID == k.accountID {
-			previousNode.next = previousNode.next.next
-			return
-		}
-		previousNode = previousNode.next
-	}
-}
-
 func (h *auctionHashTable) auctionHashAccessUpdate(key Auction) {
 	index := hashAuction(key.auctionID)
 	h.array[index].updateAuctionInLinkedList(key)
@@ -266,38 +161,67 @@ func (b *auctionLinkedList) updateAuctionInLinkedList(k Auction) { //update auct
 	}
 }
 
-func (h *userHashTable) userHashAccessUpdate(key User) {
-	index := hashUser(key)
-	h.array[index].updateUserInLinkedList(key)
+func createAuctionMain(A *auctionHashTable, report chan uint64, report_log chan string) {
+
+	count := randomize(1, 1000000)
+	newUser := createUser("testUsername"+fmt.Sprint(count), "test"+fmt.Sprint(count), randomize(100000, 999999))
+	newAuction := createAuction(newUser, randomize(100, 10000), randomize(100, 1000), 992129)
+
+	A.insertAuctToHash(newAuction.createdAuction)
+
+	report <- newAuction.created_auction_id // This line is used to notate new user created.
+	report_log <- "auction has been created completely"
+
 }
 
-func (b *userLinkedList) updateUserInLinkedList(k User) { //update user
-	currentNode := b.head
-	temp := k.accountID
-	for currentNode != nil {
-		if currentNode.key.accountID == temp {
-			currentNode.key = k
-			fmt.Println(currentNode.key)
-			return
-		}
-		currentNode = currentNode.next
+// This function will be called by createAuctionMain() which is located within the main().
+func createAuction(auctioneer User, initBid uint64, bidStep uint64, id uint64) *auctionReport {
+
+	var itemName string = "testItem"
+	var duration time.Duration = 1
+
+	auction := Auction{}
+	auction = Auction{
+		auctionID:      id,
+		auctioneerID:   auctioneer.accountID,
+		itemName:       itemName,
+		currWinnerID:   auctioneer.accountID,
+		currWinnerName: auctioneer.fullname,
+		currMaxBid:     initBid,
+		bidStep:        bidStep,
+		latestBidTime:  time.Now().Format(time.RFC3339Nano),
+		startTime:      time.Now().Format(time.RFC3339Nano),
+		endTime:        time.Now().Add(duration * time.Hour).Format(time.RFC3339Nano),
+		actionCount:    0,
 	}
+	result := auctionReport{
+		createdAuction:     &auction,
+		created_auction_id: id,
+	}
+	return &result
 }
 
-// Hash block allocation.
-func auctionAllocate() *auctionHashTable {
-	result := &auctionHashTable{}
-	for i := range result.array {
-		result.array[i] = &auctionLinkedList{}
-	}
-	return result
-}
+// Get the bidding processes created and compare it with the current auction.
+func (a *Auction) updateAuctionWinner(b Bid) string {
 
-// Hash block allocation.
-func userAllocate() *userHashTable {
-	result := &userHashTable{}
-	for i := range result.array {
-		result.array[i] = &userLinkedList{}
+	//fmt.Println("bid time ", b.bidTime)
+	//fmt.Println("end time", a.endTime)
+
+	if b.bidTime > a.endTime {
+		return "The auction has already ended"
 	}
-	return result
+
+	if (b.bidPrice > a.currMaxBid) && (b.bidPrice-a.currMaxBid) >= a.bidStep {
+		a.currMaxBid = b.bidPrice
+		a.currWinnerID = b.bidderID
+		a.latestBidTime = b.bidTime
+		a.currWinnerName = b.bidderUsername
+	}
+
+	time.Sleep(1 * time.Millisecond)
+	report := fmt.Sprint(a.currWinnerID) + "is now the winner of auction" + fmt.Sprint(a.auctionID)
+
+	return report
+
+	// where a is the updated auction.
 }
