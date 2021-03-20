@@ -20,15 +20,24 @@ func main() {
 
 	for {
 		Inconn, err := In.Accept()
+		go ReProx(Inconn, back)
 		if err != nil {
 			log.Printf("failed to accept: %s", err)
 			continue
 		}
-		go ReProx(Inconn, back)
+
 	}
+}
+func copy(src net.Conn, dst net.Conn, stop chan bool) {
+	io.Copy(dst, src)
+	dst.Close()
+	src.Close()
+	stop <- true
+	return
 }
 
 func ReProx(src net.Conn, server string) {
+
 	dst, err := net.Dial("tcp", server)
 	if err != nil {
 		src.Close()
@@ -36,7 +45,14 @@ func ReProx(src net.Conn, server string) {
 		return
 	}
 
-	io.Copy(dst, src)
-	io.Copy(src, dst)
+	stop := make(chan bool)
+
+	go copy(dst, src, stop)
+	go copy(src, dst, stop)
+
+	select {
+	case <-stop:
+		return
+	}
 
 }
