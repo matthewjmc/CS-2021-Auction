@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"reflect"
 	"regexp"
 	"strings"
 
@@ -18,54 +17,37 @@ type Client struct {
 }
 
 type Auction struct {
-	Description      string `json: "description"`
-	AddressIP        string `json: "address"`
-	ConnectedClients int    `json: "numbers of connect users"`
+	Description      string
+	AddressIP        string
+	ConnectedClients int
 }
 
 func main() {
-	getAuctionByID("1")
-	//fmt.Println("start")
-
+	GetAddressByID("9")
+	// key1 := "9"
+	// value1 := &Auction{Description: "someName", AddressIP: "addr:12345678", ConnectedClients: 1}
+	// setKey(key1, value1)
 }
 
-func createNewAuction() {
+func SetKey(key string, value interface{}) {
 	client := redis.NewClient(&redis.Options{
 		Addr:     "localhost: 6379",
 		Password: "",
 		DB:       0,
 	})
-	d := Auction{
-		Description:      "auction1",
-		AddressIP:        "addr:1",
-		ConnectedClients: 0,
-	}
-	json, err := json.Marshal(d)
-
-	err = client.Set("2", json, 0).Err()
+	entry, err := json.Marshal(value)
 	if err != nil {
 		fmt.Println(err)
 	}
-	fmt.Println(reflect.TypeOf(json))
-}
-
-func postNew() {
-	client := redis.NewClient(&redis.Options{
-		Addr:     "localhost: 6379",
-		Password: "",
-		DB:       0,
-	})
-	d := &Auction{
-		Description:      "auction1",
-		AddressIP:        "addr:1",
-		ConnectedClients: 0,
+	err = client.Set(key, entry, 0).Err()
+	if err != nil {
+		fmt.Println(err)
 	}
-	var m = make(map[string]interface{})
-
+	fmt.Println(entry)
 }
 
 // return only id and description to the client
-func getAuctionDescription(id string) (auctionid, val string) {
+func getAuctionDescription(id string) (auctionid, descr string) {
 	client := redis.NewClient(&redis.Options{
 		Addr:     "localhost: 6379",
 		Password: "",
@@ -82,12 +64,13 @@ func getAuctionDescription(id string) (auctionid, val string) {
 		log.Fatal(err)
 	}
 	newval = reg.ReplaceAllString(newval, "")
-	returnval := strings.ReplaceAll(newval, "Description", "")
-	return id, returnval
+	desc := strings.ReplaceAll(newval, "Description", "")
+	fmt.Println(desc)
+	return id, desc
 }
 
 // return all column pass to nonthicha
-func getAuctionByID(id string) (val string) {
+func GetAddressByID(id string) (addr string) {
 	client := redis.NewClient(&redis.Options{
 		Addr:     "localhost: 6379",
 		Password: "",
@@ -97,8 +80,16 @@ func getAuctionByID(id string) (val string) {
 	if err != nil {
 		fmt.Println(err)
 	}
-	fmt.Println(val)
-	return val
+	newval := strings.Split(val, ",")[1]
+	newval = strings.ReplaceAll(newval, "{", "")
+	reg, err := regexp.Compile("[^a-zA-Z0-9]+")
+	if err != nil {
+		log.Fatal(err)
+	}
+	newval = reg.ReplaceAllString(newval, "")
+	addr = strings.ReplaceAll(newval, "AddressIP", "")
+	fmt.Println(addr)
+	return addr
 }
 
 func updateConnectedUsers(id string, count int64) {
