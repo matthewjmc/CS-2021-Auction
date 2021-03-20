@@ -383,7 +383,7 @@ func createUserMain(h *userHashTable, report chan User, report_log chan string) 
 
 }
 
-func createAuctionMain(A *auctionHashTable, report chan Auction, report_log chan string) {
+func createAuctionMain(A *auctionHashTable, report chan uint64, report_log chan string) {
 
 	count := randomize(1, 1000000)
 	newUser := createUser("testUsername"+fmt.Sprint(count), "test"+fmt.Sprint(count), randomize(100000, 999999))
@@ -391,7 +391,7 @@ func createAuctionMain(A *auctionHashTable, report chan Auction, report_log chan
 
 	A.insertAuctToHash(newAuction.createdAuction)
 
-	report <- *newAuction.createdAuction // This line is used to notate new user created.
+	report <- newAuction.created_auction_id // This line is used to notate new user created.
 	report_log <- "auction has been created completely"
 
 }
