@@ -21,6 +21,8 @@ type Package struct{
 	}
 }
 
+var serverIP = "10.104.0.9:19530"
+
 func main() {
 	arguments := os.Args
 	args,_ := strconv.Atoi(arguments[1])
@@ -34,6 +36,7 @@ func main() {
 		user.Data.Value = rand.Intn(100000 - 10) + 10
 		go handleCon(user)
 		n++
+		fmt.Println(n)
 	}
 	for {
 
@@ -41,7 +44,7 @@ func main() {
 }
 
 func handleCon(data Package) {
-	connection, _ := net.Dial("tcp", "10.0.59.139:19530")
+	connection, _ := net.Dial("tcp4", serverIP)
 	err := connection.(*net.TCPConn).SetKeepAlive(true)
 	if err != nil {
 		fmt.Println(err)
@@ -55,15 +58,13 @@ func handleCon(data Package) {
 	//Convert Struct to JSON Document
 	var jsonData []byte
 	jsonData, err = json.Marshal(data)
-	fmt.Println("AuctionID:",data.AuctionID)
+	//fmt.Println(jsonData)
 	if err != nil {
     	fmt.Println(err)
 	}
 	//Transmit and Receive
 	for {
 		fmt.Fprintf(connection,string(jsonData)+"\n")
-		//data, _ := bufio.NewReader(connection).ReadString('\n')
-		//fmt.Println("From -->", data)
 		time.Sleep(1*time.Second)
 	}
 	connection.Close()

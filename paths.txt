@@ -5,9 +5,14 @@ Add to /etc/profile
 
 
 fs.file-max = 65536
+net.ipv4.ip_local_port_range = 12000 65535
+net.ipv4.tcp_fin_timeout = 15
+net.ipv4.tcp_window_scaling = 1
+net.ipv4.tcp_max_syn_backlog = 3240000
+net.core.somaxconn = 1024
 
 To /etc/sysctl.conf
 
 * soft nofile 1048576
 * hard nofile 1048576
-/etc/security/limits.conf4
+/etc/security/limits.conf
