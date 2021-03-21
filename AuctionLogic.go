@@ -1,4 +1,4 @@
-package main
+package AuctionSystem
 
 import (
 	. "CS-2021-Auction/AuctionSystem"
