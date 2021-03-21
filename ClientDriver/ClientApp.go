@@ -4,26 +4,28 @@ import (
 	"bufio"
 	"fmt"
 	"net"
+	"os"
+	"os/exec"
 	"time"
 
 	"encoding/json"
 )
 
 type Package struct {
-	AuctionID int
-	UserID    int
+	AuctionID uint64
+	UserID    uint64
 	Command   string
 	Data      struct {
 		Item  string
-		Value int
+		Value uint64
 	}
 }
 
 func main() {
 	data := Package{}
-	var userIn int
-	var aID int
-	var uID int
+	var userIn uint64
+	var aID uint64
+	var uID uint64
 	fmt.Println("Please Enter User ID:")
 	fmt.Scanf("%d", &uID)
 	fmt.Println("\nWhat Would you like to do?\n\t1--> Create an Auction\n\t2--> Join an Auction")
@@ -105,8 +107,11 @@ func openCon(data Package) {
 		}
 		json.Unmarshal([]byte(rawdata), &received)
 		if received.Command == "usrjoin" {
-			fmt.Printf("User %d has Joined the Room\n", received.UserID)
+			clearScreen()
+			fmt.Printf("User %d has Joined Room No.%d\n", received.UserID, received.AuctionID)
 		} else if received.Command == "curPrice" {
+			clearScreen()
+			fmt.Printf("Room No.%d\n", received.AuctionID)
 			fmt.Printf("Current Price -----> %d\n", received.Data.Value)
 		}
 	}
@@ -122,18 +127,25 @@ func jsonify(data Package) []byte {
 	return jsonData
 }
 
-func readInput(con net.Conn, aID int, uID int) {
+func readInput(con net.Conn, aID uint64, uID uint64) {
 	temp := Package{}
 	temp.UserID = uID
 	temp.AuctionID = aID
 	temp.Command = "bid"
 	temp.Data.Item = "price"
 	for {
-		var price int
+		var price uint64
 		fmt.Scanf("%d", &price)
 		temp.Data.Value = price
 		jsondata := jsonify(temp)
+		clearScreen()
 		fmt.Fprintf(con, string(jsondata)+"\n")
-		fmt.Println("Data Sent")
+		//fmt.Println("Data Sent")
 	}
+}
+
+func clearScreen() {
+	cmd := exec.Command("clear")
+	cmd.Stdout = os.Stdout
+	cmd.Run()
 }
