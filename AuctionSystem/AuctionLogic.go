@@ -1,7 +1,7 @@
 package AuctionSystem
 
 import (
-	. "CS-2021-Auction/AuctionSystem"
+	// . "CS-2021-Auction/AuctionSystem"
 	"fmt"
 	"sync"
 	"time"
@@ -36,7 +36,7 @@ func mainTimeline(A *AuctionHashTable, U *UserHashTable, instructions Data) {
 	if command == "User" || command == "user" {
 		user_report := make(chan User)
 		report_log := make(chan string)
-		go createUserMain(U, user_report, report_log, instructions.uid, instructions.fullname)
+		go CreateUserMain(U, user_report, report_log, instructions.uid, instructions.fullname)
 		newUser := <-user_report
 		log := <-report_log
 		fmt.Println(log, newUser)
@@ -44,7 +44,7 @@ func mainTimeline(A *AuctionHashTable, U *UserHashTable, instructions Data) {
 	} else if command == "Auction" || command == "auction" {
 		report_auction := make(chan Auction)
 		report_log := make(chan string)
-		go createAuctionMain(U, A, report_auction, report_log, instructions.uid, instructions.aid, instructions.biddingValue, instructions.biddingStep)
+		go CreateAuctionMain(U, A, report_auction, report_log, instructions.uid, instructions.aid, instructions.biddingValue, instructions.biddingStep)
 		newAuction := <-report_auction
 		log := <-report_log
 		fmt.Println(newAuction, log)
@@ -55,7 +55,7 @@ func mainTimeline(A *AuctionHashTable, U *UserHashTable, instructions Data) {
 		} else {
 			report_price := make(chan uint64)
 			report_log := make(chan string)
-			go makeBidMain(U, A, report_price, report_log, instructions.uid, instructions.aid, instructions.biddingValue)
+			go MakeBidMain(U, A, report_price, report_log, instructions.uid, instructions.aid, instructions.biddingValue)
 			finalAuction := <-report_price
 			log := <-report_log
 			fmt.Println(finalAuction, log)
@@ -90,28 +90,18 @@ func mainTimeline(A *AuctionHashTable, U *UserHashTable, instructions Data) {
 
 var wg sync.WaitGroup
 
-func makeBidMain(u *UserHashTable, h *AuctionHashTable, report_price chan uint64, report_log chan string, uid uint64, targetid uint64, placeVal uint64) {
-
+func MakeBidMain(u *UserHashTable, h *AuctionHashTable, report_price chan uint64, report_log chan string, uid uint64, targetid uint64, placeVal uint64) {
 	bidTime := time.Now().Format(time.RFC3339Nano)
-	if u.SearchUserIDHashTable(uid) == false {
-		fmt.Println("The user could not be located within the system.")
-	} else { // for testing
-		currUser := *u.AccessUserHash(uid)
-
-		newBid := CreateBid(currUser, placeVal, bidTime)
-
-		// access for auction object to be updated at the target variable.
-		target := h.AccessHashAuction(targetid)
-		//fmt.Println("Previous Winner:", target.currWinnerName)
-		target.UpdateAuctionWinner(newBid)
-		h.AuctionHashAccessUpdate(*target)
-		//fmt.Println("Current Winner:", target.currWinnerName)
-		report_price <- target.CurrMaxBid // This line is used to notate new user created.
-		report_log <- "auction has been updated completely"
-	}
+	currUser := *u.AccessUserHash(uid)
+	newBid := CreateBid(currUser, placeVal, bidTime)
+	target := h.AccessHashAuction(targetid)
+	target.UpdateAuctionWinner(newBid)
+	h.AuctionHashAccessUpdate(*target)
+	report_price <- newBid.bidPrice
+	report_log <- "auction has been updated completely"
 }
 
-func createUserMain(h *UserHashTable, report chan User, report_log chan string, uid uint64, name string) {
+func CreateUserMain(h *UserHashTable, report chan User, report_log chan string, uid uint64, name string) {
 	if !h.SearchUserIDHashTable(uid) {
 		newUser := CreateUser("username"+fmt.Sprint(uid), name, uid)
 		report <- newUser
@@ -122,7 +112,7 @@ func createUserMain(h *UserHashTable, report chan User, report_log chan string, 
 	}
 }
 
-func createAuctionMain(U *UserHashTable, A *AuctionHashTable, auction chan Auction, report_log chan string, uid uint64, aid uint64, initial uint64, step uint64) {
+func CreateAuctionMain(U *UserHashTable, A *AuctionHashTable, auction chan Auction, report_log chan string, uid uint64, aid uint64, initial uint64, step uint64) {
 	user := U.AccessUserHash(uid)
 	if !A.SearchAuctIDHashTable(aid) {
 		newAuction := CreateAuction(*user, initial, step, aid)

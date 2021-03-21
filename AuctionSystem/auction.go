@@ -47,6 +47,7 @@ func HashAuction(targetID uint64) uint64 {
 func (h *AuctionHashTable) InsertAuctToHash(auction *Auction) {
 	index := HashAuction(auction.AuctionID)
 	h.array[index].insertAuctToLinkedList(*auction)
+	fmt.Println("Added Success")
 }
 
 // Continuation of hash function insertion to place it within a linked list as a node.
@@ -76,7 +77,7 @@ func (b *AuctionLinkedList) searchAuctIDLinkedList(auctionid uint64) bool { //Fo
 		}
 		currentNode = currentNode.next
 	}
-	fmt.Println("There is no function with that ID in the memory.")
+	//fmt.Println("There is no auction with that ID in the memory.")
 	return false
 }
 
