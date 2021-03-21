@@ -8,8 +8,7 @@ import (
 
 func main() {
 	front := "19530"
-	back := "iot2.mccullin.org"
-
+	back := "com2.mcmullin.org"
 	In, err := net.Listen("tcp", front)
 	if err != nil {
 		log.Fatalf("failed to setup listener: %v", err)
