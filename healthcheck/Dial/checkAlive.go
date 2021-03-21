@@ -8,8 +8,9 @@ import (
 )
 
 func main() {
-	checkEvery(15*time.Millisecond, checkConnection1)
-	checkEvery(20*time.Millisecond, checkConnection2)
+	// checkEvery(15*time.Millisecond, checkConnection1)
+	// checkEvery(20*time.Millisecond, checkConnection2)
+
 }
 
 func checkEvery(d time.Duration, f func(time.Time)) {

@@ -67,12 +67,3 @@ func main() {
 		}
 	}
 }
-
-// for _, serv := range servers {
-// 	ln, _ := net.Listen(serv.protocol, serv.addr)
-// 	fmt.Println(serv)
-// 	for {
-// 		conn, _ := ln.Accept()
-// 		go handleConnection(conn)
-// 	}
-// }

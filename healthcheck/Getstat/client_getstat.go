@@ -4,14 +4,42 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"net"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 	"unicode"
+	// "encoding/gob"
 )
 
 func main() {
+	for {
+		conn, err := net.Dial("tcp4", "load.mcmullin.org:19530")
+		if err != nil {
+			fmt.Println(err)
+		}
+		defer conn.Close()
+		for {
+			data := Usage()
+			// reader := bufio.NewReader(data)
+			// fmt.Print(">> ")
+			// text, _ := reader.ReadString('\n')
+			fmt.Fprintf(conn, data+"\n")
+
+			message, _ := bufio.NewReader(conn).ReadString('\n')
+			fmt.Print("->: " + message)
+			if strings.TrimSpace(string(data)) == "STOP" {
+				fmt.Println("TCP client exiting...")
+				return
+			}
+			time.Sleep(5 * time.Second)
+		}
+	}
+
+}
+
+func Usage() (data string) {
 	before := collectCPUStats()
 
 	time.Sleep(time.Duration(1) * time.Second)
@@ -19,10 +47,15 @@ func main() {
 
 	total := float64(after.Total - before.Total)
 	idle := float64(after.Idle-before.Idle) / total * 100
-	fmt.Println("cpu idle: ", idle)
+	fmt.Println("cpu idle:", idle)
+
+	vs := strconv.FormatFloat(float64(idle), 'f', 2, 64)
+	send := []byte(`"` + vs + `"`)
+	fmt.Println(send)
+	return vs
 }
 
-// cpu statistics for linux
+// Stats represents cpu statistics for linux
 type Stats struct {
 	User      uint64
 	Nice      uint64
@@ -82,7 +115,8 @@ func collectCPUStats() *Stats {
 		cpu.Total += val
 	}
 
-	// Since cpustat[CPUTIME_USER] includes cpustat[CPUTIME_GUEST]
+	// Since cpustat[CPUTIME_USER] includes cpustat[CPUTIME_GUEST], subtract the duplicated values from total.
+	// https://github.com/torvalds/linux/blob/4ec9f7a18/kernel/sched/cputime.c#L151-L158
 	cpu.Total -= cpu.Guest
 	// cpustat[CPUTIME_NICE] includes cpustat[CPUTIME_GUEST_NICE]
 	cpu.Total -= cpu.GuestNice
@@ -99,5 +133,3 @@ func collectCPUStats() *Stats {
 
 	return &cpu
 }
-
-// https://github.com/torvalds/linux/blob/4ec9f7a18/kernel/sched/cputime.c#L151-L158
