@@ -1,4 +1,4 @@
-package main
+package AuctionSystem
 
 import (
 	. "CS-2021-Auction/AuctionSystem"
@@ -31,18 +31,19 @@ func mainTimeline(A *AuctionHashTable, U *UserHashTable, uid uint64) {
 	fmt.Scanln(&command)
 
 	if command == "User" || command == "user" {
-		userid_report := make(chan uint64)
-		report_log := make(chan string)
-
-		var uid uint64
-		var fullname string
-		fmt.Println("fullname")
-		fmt.Scanln(&fullname)
-		go createUserMain(U, userid_report, report_log, uid, fullname)
-		newUser := <-userid_report
-		log := <-report_log
-		fmt.Println(log, newUser)
-
+		if U.SearchUserIDHashTable(uid) {
+			fmt.Println("The account has already been occupied")
+		} else {
+			userid_report := make(chan uint64)
+			report_log := make(chan string)
+			var fullname string
+			fmt.Println("fullname")
+			fmt.Scanln(&fullname)
+			go createUserMain(U, userid_report, report_log, uid, fullname)
+			newUser := <-userid_report
+			log := <-report_log
+			fmt.Println(log, newUser)
+		}
 	} else if command == "Auction" || command == "auction" {
 		report_auction := make(chan Auction)
 		report_log := make(chan string)
@@ -54,10 +55,10 @@ func mainTimeline(A *AuctionHashTable, U *UserHashTable, uid uint64) {
 		go createAuctionMain(U, A, report_auction, report_log, uid, Randomize(100, 999), initbid, step)
 		newAuction := <-report_auction
 		log := <-report_log
-		fmt.Println(newAuction.AuctionID, log)
-
+		fmt.Println(log)
+		fmt.Println("New created auction is having the id of", newAuction.AuctionID)
+		fmt.Println(newAuction)
 	} else if command == "bid" {
-
 		var tid, price uint64
 		fmt.Println("What is your target auction id")
 		fmt.Scanln(&tid)
