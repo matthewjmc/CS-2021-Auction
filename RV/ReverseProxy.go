@@ -7,8 +7,8 @@ import (
 )
 
 func main() {
-	front := "localhost:7000"
-	back := "localhost:9000"
+	front := "19530"
+	back := "iot2.mccullin.org"
 
 	In, err := net.Listen("tcp", front)
 	if err != nil {
