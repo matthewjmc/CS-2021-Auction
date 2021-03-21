@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"net"
 	"sync"
+	"time"
 	// "github.com/matthewjmc/CS-2021-Auction/AuctionSystem"
 )
 
@@ -46,7 +47,7 @@ func serverInit() {
 	var wg sync.WaitGroup                       //Ensure Data Integrity
 	stream, err := net.Listen("tcp4", ":19530") //Listen at port 19530
 	if err != nil {
-		fmt.Println(err)
+		//fmt.Println(err)
 		return
 	}
 	defer stream.Close()
@@ -54,11 +55,11 @@ func serverInit() {
 	for {
 		con, err := stream.Accept()
 		if err != nil {
-			fmt.Println(err)
+			//fmt.Println(err)
 			return
 		}
 		wg.Add(1)
-		fmt.Println(n)
+		//fmt.Println(n)
 		go requestHandle(con, &wg)
 		n++
 		wg.Wait()
@@ -74,7 +75,7 @@ func requestHandle(con net.Conn, wg *sync.WaitGroup) { //Check make Sure other t
 		//fmt.Println(rawdata)
 		json.Unmarshal([]byte(rawdata), &received)
 		if err != nil {
-			fmt.Println(err)
+			////fmt.Println(err)
 			return
 		}
 		if received.Command == "create" {
@@ -92,6 +93,14 @@ func requestHandle(con net.Conn, wg *sync.WaitGroup) { //Check make Sure other t
 			wg.Done()
 			fmt.Printf("User %d has Joined Auction %d\n", received.UserID, received.AuctionID)
 			loggedIn = true
+
+			tmp := Package{}
+			tmp.Command = "Success"
+			var jsonData []byte
+			jsonData, err = json.Marshal(tmp)
+			returnData(con, string(jsonData))
+			_updateUsers(received.AuctionID, received.UserID)
+
 		} else if loggedIn {
 			switch received.Command {
 			case "bid":
@@ -124,6 +133,7 @@ func addUsr(con net.Conn, aID int, uID int) {
 					ConnectedClients: []net.Conn{con}})
 		}
 	}
+	//fmt.Println(aucSessions)
 }
 
 func _aucExists(aID int) (bool, int) {
@@ -144,7 +154,7 @@ func _updateClient(aID int, uID int, price int) {
 		temp.Data.Value = price
 		jsonData, err := json.Marshal(temp)
 		if err != nil {
-			fmt.Println(err)
+			//fmt.Println(err)
 		}
 		auc := aucSessions[index]
 		for i := 0; i < len(auc.ConnectedClients); i++ {
@@ -153,8 +163,23 @@ func _updateClient(aID int, uID int, price int) {
 	}
 }
 
-func _updateServerInfo() {
-
+func _updateUsers(aID int, uID int) {
+	time.Sleep(1 * time.Second)
+	var temp Package
+	found, index := _aucExists(aID)
+	if found {
+		temp.Command = "usrjoin"
+		temp.UserID = uID
+		jsonData, err := json.Marshal(temp)
+		if err != nil {
+			//fmt.Println(err)
+		}
+		auc := aucSessions[index]
+		//fmt.Println(auc)
+		for i := 0; i < len(auc.ConnectedClients); i++ {
+			fmt.Fprintf(auc.ConnectedClients[i], string(jsonData)+"\n")
+		}
+	}
 }
 
 func _generateAucID() int {
@@ -165,9 +190,4 @@ func _generateAucID() int {
 		exist, _ = _aucExists(aucID)
 	}
 	return aucID
-}
-
-func _generateUID() int {
-	uID := rand.Intn(100000-10) + 10
-	return uID
 }
