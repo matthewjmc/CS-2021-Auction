@@ -76,7 +76,6 @@ func (b *AuctionLinkedList) searchAuctIDLinkedList(auctionid uint64) bool { //Fo
 		}
 		currentNode = currentNode.next
 	}
-	fmt.Println("There is no function with that ID in the memory.")
 	return false
 }
 
@@ -117,7 +116,7 @@ func (b *AuctionLinkedList) accessLinkedListAuction(auctionID uint64) *Auction {
 	currentNode := b.head
 	for currentNode != nil {
 		if currentNode.key.AuctionID == auctionID {
-			fmt.Println("The auction is being accessed")
+			//fmt.Println("The auction is being accessed")
 			return &currentNode.key
 		}
 		currentNode = currentNode.next
@@ -163,7 +162,7 @@ func (b *AuctionLinkedList) searchAuctNameInLinkedList(k Auction) bool { //For c
 		}
 		currentNode = currentNode.next
 	}
-	fmt.Println("There is no auction with that name in the memory.")
+	//fmt.Println("There is no auction with that name in the memory.")
 	return false
 }
 

@@ -65,7 +65,7 @@ func (b *UserLinkedList) searchUserIDLinkedList(uid uint64) bool { //For search 
 		}
 		currentNode = currentNode.Next
 	}
-	fmt.Println("There is no auction with that ID in the memory.")
+	//fmt.Println("There is no auction with that ID in the memory.")
 	return false
 }
 
@@ -84,7 +84,7 @@ func (b *UserLinkedList) accessUserLinkedList(uid uint64) *User { //For search t
 		}
 		currentNode = currentNode.Next
 	}
-	fmt.Println("There is no auction with that ID in the memory.")
+	//fmt.Println("There is no user with that ID in the memory.")
 	return &User{}
 }
 
