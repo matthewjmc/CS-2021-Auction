@@ -7,15 +7,15 @@ import (
 )
 
 func main() {
-	front := "localhost:7000"
-	back := "localhost:9000"
+	front := "19530"
+	back := "iot2.mccullin.org"
 
 	In, err := net.Listen("tcp", front)
 	if err != nil {
 		log.Fatalf("failed to setup listener: %v", err)
 	}
 
-	log.Printf("listening on %s, balancing %s", front, back)
+	log.Println("listening on %", front)
 	log.Println("//////////////////LISTENING//////////////////")
 
 	for {
