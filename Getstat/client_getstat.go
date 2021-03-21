@@ -13,6 +13,8 @@ import (
 	// "encoding/gob"
 )
 
+// locate on the compute server S1 and S2 to send the CPU idle percentage
+// to the load to determine the address assign to new auction
 func main() {
 	for {
 		conn, err := net.Dial("tcp4", "load.mcmullin.org:19530")
