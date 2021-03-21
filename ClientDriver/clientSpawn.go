@@ -47,7 +47,7 @@ func main() {
 }
 
 func handleCon(data Package) {
-	connection, _ := net.Dial("tcp", "10.0.59.139:19530")
+	connection, _ := net.Dial("tcp", serverIP)
 	defer connection.Close()
 	err := connection.(*net.TCPConn).SetKeepAlive(true)
 	if err != nil {

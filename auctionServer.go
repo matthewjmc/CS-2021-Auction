@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"net"
 	"sync"
 	// "github.com/matthewjmc/CS-2021-Auction/AuctionSystem"
@@ -17,6 +18,11 @@ type Package struct { // Data Sent and Received From user
 		Item  string
 		Value int
 	}
+}
+
+type Temp struct {
+	AuctionID int
+	UserID    int
 }
 
 type Auction struct { //Auctions Running at one time
@@ -52,36 +58,52 @@ func serverInit() {
 			return
 		}
 		wg.Add(1)
-		go requestHandle(con, &wg)
 		fmt.Println(n)
+		go requestHandle(con, &wg)
 		n++
 		wg.Wait()
 	}
 }
 
 func requestHandle(con net.Conn, wg *sync.WaitGroup) { //Check make Sure other thread does not RW Same Data
-	var state bool = false //Check if User has been registered
-	var received Package   //Data Received From User to be decoded to Struct
+	var loggedIn bool = false //Check if User has been registered
+	var received Package      //Data Received From User to be decoded to Struct
 	defer con.Close()
 	for {
 		rawdata, err := bufio.NewReader(con).ReadString('\n')
 		//fmt.Println(rawdata)
+		json.Unmarshal([]byte(rawdata), &received)
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
-		if !state {
-			json.Unmarshal([]byte(rawdata), &received)
-			//fmt.Println(received)
+		if received.Command == "create" {
+			tmp := Package{}
+			tmp.Data.Item = "AuctionID"
+			tmp.Data.Value = _generateAucID()
+			tmp.Command = "AucCreated"
+			var jsonData []byte
+			jsonData, err = json.Marshal(tmp)
+			returnData(con, string(jsonData))
+			fmt.Printf("User %d Has Created Auction %d\n", received.UserID, tmp.Data.Value)
+			wg.Done()
+		} else if !loggedIn && received.Command == "join" {
 			addUsr(con, received.AuctionID, received.UserID)
 			wg.Done()
-			state = true
+			fmt.Printf("User %d has Joined Auction %d\n", received.UserID, received.AuctionID)
+			loggedIn = true
+		} else if loggedIn {
+			switch received.Command {
+			case "bid":
+				fmt.Println("User Requesting to Bid")
+				//_updateClient(received.AuctionID,)
+			}
 		}
-		// else if received.Command == "Update" {
-		// 	_updateClient(received.AuctionID,)
-		// }
 	}
-	//con.Close()
+}
+
+func returnData(con net.Conn, data string) {
+	fmt.Fprintf(con, string(data)+"\n") //Fix this
 }
 
 func addUsr(con net.Conn, aID int, uID int) {
@@ -128,11 +150,24 @@ func _updateClient(aID int, uID int, price int) {
 		for i := 0; i < len(auc.ConnectedClients); i++ {
 			fmt.Fprintf(auc.ConnectedClients[i], string(jsonData))
 		}
-
 	}
-
 }
 
 func _updateServerInfo() {
 
+}
+
+func _generateAucID() int {
+	aucID := rand.Intn(100000-10) + 10
+	exist, _ := _aucExists(aucID)
+	for exist {
+		aucID := rand.Intn(100000-10) + 10
+		exist, _ = _aucExists(aucID)
+	}
+	return aucID
+}
+
+func _generateUID() int {
+	uID := rand.Intn(100000-10) + 10
+	return uID
 }
