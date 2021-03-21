@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"sync"
+	// "github.com/matthewjmc/CS-2021-Auction/AuctionSystem"
 )
 
 type Package struct { // Data Sent and Received From user
@@ -25,8 +26,14 @@ type Auction struct { //Auctions Running at one time
 
 var aucSessions = []Auction{} //All Connected Auction
 
+// mainTimeline(A *AuctionHashTable, U *UserHashTable, command string)
+
 func main() {
+	// A := AuctionSystem.AuctionAllocate()
+	// U := AuctionSystem.UserAllocate()
 	serverInit()
+	// temp := AuctionSystem.MainTimeline()
+
 }
 
 func serverInit() {
