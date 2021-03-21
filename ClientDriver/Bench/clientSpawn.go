@@ -1,11 +1,13 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"log"
 	"net"
 	"time"
 
+	"bufio"
 	"encoding/json"
 	"math/rand"
 	"os"
@@ -42,7 +44,7 @@ func main() {
 		user := Package{}
 		user.AuctionID = rand.Intn(10-1) + 1
 		user.UserID = rand.Intn(2000-1) + 1
-		user.Data.Item = "Price"
+		user.Data.Item = "bid"
 		user.Data.Value = rand.Intn(100000-10) + 10
 
 		go handleCon(user)
@@ -82,8 +84,8 @@ func handleCon(data Package) {
 		}
 
 		fmt.Fprintf(connection, string(jsonData)+"\n")
-		//data, _ := bufio.NewReader(connection).ReadString('\n')
-		//fmt.Println("From -->", data)
+		data, _ := bufio.NewReader(connection).ReadString('\n')
+		fmt.Println("From -->", data)
 		time.Sleep(1 * time.Second)
 	}
 
