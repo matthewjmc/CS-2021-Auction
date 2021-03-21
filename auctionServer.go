@@ -99,13 +99,13 @@ func requestHandle(con net.Conn, wg *sync.WaitGroup) { //Check make Sure other t
 			var jsonData []byte
 			jsonData, err = json.Marshal(tmp)
 			returnData(con, string(jsonData))
-			_updateUsers(received.AuctionID, received.UserID)
+			go _updateUsers(received.AuctionID, received.UserID)
 
 		} else if loggedIn {
 			switch received.Command {
 			case "bid":
-				fmt.Println("User Requesting to Bid")
-				//_updateClient(received.AuctionID,)
+				//fmt.Println("User Requesting to Bid")
+				_updateClient(received.AuctionID, received.UserID, received.Data.Value)
 			}
 		}
 	}
@@ -150,7 +150,7 @@ func _updateClient(aID int, uID int, price int) {
 	found, index := _aucExists(aID)
 	if found {
 		temp.UserID = uID
-		temp.Data.Item = "Price"
+		temp.Command = "curPrice"
 		temp.Data.Value = price
 		jsonData, err := json.Marshal(temp)
 		if err != nil {
@@ -158,8 +158,9 @@ func _updateClient(aID int, uID int, price int) {
 		}
 		auc := aucSessions[index]
 		for i := 0; i < len(auc.ConnectedClients); i++ {
-			fmt.Fprintf(auc.ConnectedClients[i], string(jsonData))
+			fmt.Fprintf(auc.ConnectedClients[i], string(jsonData)+"\n")
 		}
+		//fmt.Println("Client Prices have been updated")
 	}
 }
 
