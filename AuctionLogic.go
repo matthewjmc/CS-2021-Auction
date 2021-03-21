@@ -1,10 +1,10 @@
-package AuctionSystem
+package main
 
 import (
 	. "CS-2021-Auction/AuctionSystem"
 	"fmt"
-	"reflect"
 	"sync"
+	"time"
 )
 
 // AuctionLogic is a file composed of Tagun's and Katisak's code altogether.
@@ -21,99 +21,118 @@ func main() {
 	mainTimeline(A, U)
 
 }*/
+type Data struct {
+	command      string
+	uid          uint64
+	fullname     string
+	aid          uint64
+	itemname     string
+	biddingValue uint64
+	biddingStep  uint64
+}
 
-//
-func mainTimeline(A *AuctionHashTable, U *UserHashTable, command string) {
+func mainTimeline(A *AuctionHashTable, U *UserHashTable, instructions Data) {
 
-	var searchID uint64
+	command := instructions.command
 
 	if command == "User" || command == "user" {
-		report := make(chan User)
+		user_report := make(chan User)
 		report_log := make(chan string)
-		go createUserMain(U, report, report_log) // possible user spawning algorithm could be used to pass the users into the function for an easier goroutine.
-		newUser := <-report
+		go createUserMain(U, user_report, report_log, instructions.uid, instructions.fullname)
+		newUser := <-user_report
 		log := <-report_log
 		fmt.Println(log, newUser)
 
 	} else if command == "Auction" || command == "auction" {
-		report_id := make(chan uint64)
+		report_auction := make(chan Auction)
 		report_log := make(chan string)
-		go createAuctionMain(A, report_id, report_log) // possible user spawning algorithm could be used to pass the users into the function for an easier goroutine.
-		newAuction := <-report_id
+		go createAuctionMain(U, A, report_auction, report_log, instructions.uid, instructions.aid, instructions.biddingValue, instructions.biddingStep)
+		newAuction := <-report_auction
 		log := <-report_log
 		fmt.Println(newAuction, log)
-		//A.searchAuctIDHashTable(newAuction.auctionID)
-
 	} else if command == "bid" {
 
-		var targetedAuctionID uint64
-		fmt.Println("What is your target auction ID in the system?")
-		fmt.Scanln(&targetedAuctionID)
-
-		if !A.SearchAuctIDHashTable(targetedAuctionID) {
+		if !A.SearchAuctIDHashTable(instructions.aid) {
 			fmt.Println("The auction has not been found within the memory")
 		} else {
-			// targetAuction := createAuction(newUser, randomize(100, 10000), randomize(100, 1000), 992129) initially, used to
 			report_price := make(chan uint64)
 			report_log := make(chan string)
-			go makeBidMain(A, report_price, report_log, searchID) // possible user spawning algorithm could be used to pass the users into the function for an easier goroutine.
+			go makeBidMain(U, A, report_price, report_log, instructions.uid, instructions.aid, instructions.biddingValue)
 			finalAuction := <-report_price
 			log := <-report_log
 			fmt.Println(finalAuction, log)
 		}
-
-	} else if command == "search" {
-		fmt.Println(A.SearchAuctIDHashTable(searchID))
+	} else if command == "searchAuction" {
+		if A.SearchAuctIDHashTable(instructions.aid) {
+			fmt.Println("Auction", instructions.aid, " is found within the system")
+		} else {
+			fmt.Println("Auction", instructions.aid, " is not found within the system")
+		}
+	} else if command == "deleteAuction" {
+		if A.AuctionHashAccessDelete(instructions.aid) {
+			fmt.Println("Auction", instructions.aid, " has been deleted for the system")
+		} else {
+			fmt.Println("Auction", instructions.aid, " is not found within the system")
+		}
+	} else if command == "searchUser" {
+		if U.SearchUserIDHashTable(instructions.uid) {
+			fmt.Println("Auction", instructions.aid, " is found within the system")
+		} else {
+			fmt.Println("Auction", instructions.aid, " is not found within the system")
+		}
+	} else if command == "deleteUser" {
+		if U.UserHashAccessDelete(instructions.uid) {
+			fmt.Println("Auction", instructions.aid, " has been deleted for the system")
+		} else {
+			fmt.Println("Auction", instructions.aid, " is not found within the system")
+		}
 	}
 
 }
 
 var wg sync.WaitGroup
 
-func makeBidMain(h *AuctionHashTable, report_price chan uint64, report_log chan string, targetid uint64) {
+func makeBidMain(u *UserHashTable, h *AuctionHashTable, report_price chan uint64, report_log chan string, uid uint64, targetid uint64, placeVal uint64) {
 
-	count := Randomize(1, 1000000)                                                                               // for testing
-	newUser := CreateUser("testUsername"+fmt.Sprint(count), "test"+fmt.Sprint(count), Randomize(100000, 999999)) // for testing
+	bidTime := time.Now().Format(time.RFC3339Nano)
+	if u.SearchUserIDHashTable(uid) == false {
+		fmt.Println("The user could not be located within the system.")
+	} else { // for testing
+		currUser := *u.AccessUserHash(uid)
 
-	newBid := CreateBid(newUser, Randomize(100, 9999))
+		newBid := CreateBid(currUser, placeVal, bidTime)
 
-	// access for auction object to be updated at the target variable.
-	target := h.AccessHashAuction(targetid)
-	//fmt.Println("Previous Winner:", target.currWinnerName)
-	fmt.Println("this is type of target:", reflect.TypeOf(target))
-	fmt.Println("this is type of *target:", reflect.TypeOf(*target))
-
-	target.UpdateAuctionWinner(newBid)
-	h.AuctionHashAccessUpdate(*target)
-	//fmt.Println("Current Winner:", target.currWinnerName)
-	report_price <- target.CurrMaxBid // This line is used to notate new user created.
-	report_log <- "auction has been updated completely"
-
+		// access for auction object to be updated at the target variable.
+		target := h.AccessHashAuction(targetid)
+		//fmt.Println("Previous Winner:", target.currWinnerName)
+		target.UpdateAuctionWinner(newBid)
+		h.AuctionHashAccessUpdate(*target)
+		//fmt.Println("Current Winner:", target.currWinnerName)
+		report_price <- target.CurrMaxBid // This line is used to notate new user created.
+		report_log <- "auction has been updated completely"
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-func createUserMain(h *UserHashTable, report chan User, report_log chan string) {
-
-	count := Randomize(1, 1000000)
-	newUser := CreateUser("testUsername"+fmt.Sprint(count), "test"+fmt.Sprint(count), Randomize(100000, 999999))
-
-	h.InsertUserToHash(newUser)
-
-	report <- newUser // This line is used to notate new user created.
-	report_log <- "account has been created completely"
-
+func createUserMain(h *UserHashTable, report chan User, report_log chan string, uid uint64, name string) {
+	if !h.SearchUserIDHashTable(uid) {
+		newUser := CreateUser("username"+fmt.Sprint(uid), name, uid)
+		report <- newUser
+		h.InsertUserToHash(newUser)
+		report_log <- "account has been created completely"
+	} else {
+		fmt.Println("The user has already registered into the system")
+	}
 }
 
-func createAuctionMain(A *AuctionHashTable, report chan uint64, report_log chan string) {
-
-	count := Randomize(1, 1000000)
-	newUser := CreateUser("testUsername"+fmt.Sprint(count), "test"+fmt.Sprint(count), Randomize(100000, 999999))
-	newAuction := CreateAuction(newUser, Randomize(100, 10000), Randomize(100, 1000), 992129)
-
-	A.InsertAuctToHash(newAuction.CreatedAuction)
-
-	report <- newAuction.CreatedID // This line is used to notate new user created.
-	report_log <- "auction has been created completely"
-
+func createAuctionMain(U *UserHashTable, A *AuctionHashTable, auction chan Auction, report_log chan string, uid uint64, aid uint64, initial uint64, step uint64) {
+	user := U.AccessUserHash(uid)
+	if !A.SearchAuctIDHashTable(aid) {
+		newAuction := CreateAuction(*user, initial, step, aid)
+		auction <- *newAuction.CreatedAuction // This line is used to notate new user created.
+		report_log <- "auction has been created completely"
+	} else {
+		fmt.Println("The Auction has already been created.")
+	}
 }

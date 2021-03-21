@@ -28,19 +28,19 @@ type UserNode struct {
 	Next *UserNode
 }
 
-func HashUser(Key User) uint64 {
-	return Key.AccountID % ArraySize
+func HashUser(uid uint64) uint64 {
+	return uid % ArraySize
 }
 
 // A behavior of a hash table object used to insert a user into a hash function to properly placed it at the correct index.
 func (h *UserHashTable) InsertUserToHash(user User) {
-	index := HashUser(user)
+	index := HashUser(user.AccountID)
 	h.Array[index].insertUserToLinkedList(user)
 }
 
 // Continuation of hash function insertion to place it within a linked list as a node.
 func (b *UserLinkedList) insertUserToLinkedList(User User) {
-	if !b.searchUserIDLinkedList(User) {
+	if !b.searchUserIDLinkedList(User.AccountID) {
 		newNode := &UserNode{Key: User}
 		newNode.Next = b.Head
 		b.Head = newNode
@@ -51,17 +51,16 @@ func (b *UserLinkedList) insertUserToLinkedList(User User) {
 }
 
 // A behavior of a hash table object used to search of an user object within the hash table using account ID of each auction.
-func (h *UserHashTable) SearchUserIDHashTable(user User) bool {
-	index := HashUser(user)
-	return h.Array[index].searchUserIDLinkedList(user)
+func (h *UserHashTable) SearchUserIDHashTable(uid uint64) bool {
+	index := HashUser(uid)
+	return h.Array[index].searchUserIDLinkedList(uid)
 }
 
 // Continuation of seachUserIDHashTable() function to continue the search within the linked list at the hash index location.
-func (b *UserLinkedList) searchUserIDLinkedList(user User) bool { //For search the user by using accouintID
+func (b *UserLinkedList) searchUserIDLinkedList(uid uint64) bool { //For search the user by using accouintID
 	currentNode := b.Head
-	temp := user.AccountID
 	for currentNode != nil {
-		if currentNode.Key.AccountID == temp {
+		if currentNode.Key.AccountID == uid {
 			return true
 		}
 		currentNode = currentNode.Next
@@ -70,29 +69,49 @@ func (b *UserLinkedList) searchUserIDLinkedList(user User) bool { //For search t
 	return false
 }
 
-func (h *UserHashTable) UserHashAccessDelete(key User) {
-	index := HashUser(key)
-	h.Array[index].DeleteUserInLinkedList(key)
+// A behavior of a hash table object used to search of an user object within the hash table using account ID of each auction.
+func (h *UserHashTable) AccessUserHash(uid uint64) *User {
+	index := HashUser(uid)
+	return h.Array[index].accessUserLinkedList(uid)
 }
 
-func (b *UserLinkedList) DeleteUserInLinkedList(k User) {
+// Continuation of seachUserIDHashTable() function to continue the search within the linked list at the hash index location.
+func (b *UserLinkedList) accessUserLinkedList(uid uint64) *User { //For search the user by using accouintID
+	currentNode := b.Head
+	for currentNode != nil {
+		if currentNode.Key.AccountID == uid {
+			return &currentNode.Key
+		}
+		currentNode = currentNode.Next
+	}
+	fmt.Println("There is no auction with that ID in the memory.")
+	return &User{}
+}
 
-	if b.Head.Key.AccountID == k.AccountID {
+func (h *UserHashTable) UserHashAccessDelete(uid uint64) bool {
+	index := HashUser(uid)
+	return h.Array[index].DeleteUserInLinkedList(uid)
+}
+
+func (b *UserLinkedList) DeleteUserInLinkedList(uid uint64) bool {
+
+	if b.Head.Key.AccountID == uid {
 		b.Head = b.Head.Next
-		return
+		return true
 	}
 	previousNode := b.Head
 	for previousNode.Next != nil {
-		if previousNode.Next.Key.AccountID == k.AccountID {
+		if previousNode.Next.Key.AccountID == uid {
 			previousNode.Next = previousNode.Next.Next
-			return
+			return true
 		}
 		previousNode = previousNode.Next
 	}
+	return false
 }
 
 func (h *UserHashTable) UserHashAccessUpdate(Key User) {
-	index := HashUser(Key)
+	index := HashUser(Key.AccountID)
 	h.Array[index].UpdateUserInLinkedList(Key)
 }
 

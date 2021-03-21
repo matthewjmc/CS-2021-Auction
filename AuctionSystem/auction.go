@@ -126,25 +126,26 @@ func (b *AuctionLinkedList) accessLinkedListAuction(auctionID uint64) *Auction {
 }
 
 // A behavior of a hash table object used to delete a user within the table.
-func (h *AuctionHashTable) AuctionHashAccessDelete(key Auction) {
-	index := HashAuction(key.AuctionID)
-	h.array[index].deleteAuctionInLinkedList(key)
+func (h *AuctionHashTable) AuctionHashAccessDelete(aid uint64) bool {
+	index := HashAuction(aid)
+	return h.array[index].deleteAuctionInLinkedList(aid)
 }
 
-func (b *AuctionLinkedList) deleteAuctionInLinkedList(k Auction) {
+func (b *AuctionLinkedList) deleteAuctionInLinkedList(aid uint64) bool {
 
-	if b.head.key.AuctionID == k.AuctionID {
+	if b.head.key.AuctionID == aid {
 		b.head = b.head.next
-		return
+		return true
 	}
 	previousNode := b.head
 	for previousNode.next != nil {
-		if previousNode.next.key.AuctionID == k.AuctionID {
+		if previousNode.next.key.AuctionID == aid {
 			previousNode.next = previousNode.next.next
-			return
+			return true
 		}
 		previousNode = previousNode.next
 	}
+	return false
 }
 
 // A behavior of a hash table object used to search of an auction object within the hash table using auction name of each auction.
@@ -217,7 +218,8 @@ func (a *Auction) UpdateAuctionWinner(b Bid) string {
 }
 
 // Create bidding to be used to update the auction.
-func CreateBid(user User, price uint64) Bid {
+func CreateBid(user User, price uint64, actionTime string) Bid {
+
 	id := rand.Uint64()
 	bid := Bid{}
 	bid = Bid{
@@ -225,7 +227,7 @@ func CreateBid(user User, price uint64) Bid {
 		bidderID:       user.AccountID,
 		bidderUsername: user.Username,
 		bidPrice:       price,
-		bidTime:        time.Now().Format(time.RFC3339Nano),
+		bidTime:        actionTime,
 	}
 	return bid
 }
