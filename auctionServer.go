@@ -12,22 +12,22 @@ import (
 )
 
 type Package struct { // Data Sent and Received From user
-	AuctionID int
-	UserID    int
+	AuctionID uint64
+	UserID    uint64
 	Command   string
 	Data      struct {
 		Item  string
-		Value int
+		Value uint64
 	}
 }
 
 type Temp struct {
-	AuctionID int
-	UserID    int
+	AuctionID uint64
+	UserID    uint64
 }
 
 type Auction struct { //Auctions Running at one time
-	AuctionID        int
+	AuctionID        uint64
 	ConnectedClients []net.Conn
 }
 
@@ -115,7 +115,7 @@ func returnData(con net.Conn, data string) {
 	fmt.Fprintf(con, string(data)+"\n") //Fix this
 }
 
-func addUsr(con net.Conn, aID int, uID int) {
+func addUsr(con net.Conn, aID uint64, uID uint64) {
 	exists, index := _aucExists(aID)
 
 	if len(aucSessions) == 0 && !exists {
@@ -136,7 +136,7 @@ func addUsr(con net.Conn, aID int, uID int) {
 	//fmt.Println(aucSessions)
 }
 
-func _aucExists(aID int) (bool, int) {
+func _aucExists(aID uint64) (bool, int) {
 	for i := 0; i < len(aucSessions); i++ {
 		if aucSessions[i].AuctionID == aID {
 			return true, i
@@ -145,12 +145,13 @@ func _aucExists(aID int) (bool, int) {
 	return false, 0
 }
 
-func _updateClient(aID int, uID int, price int) {
+func _updateClient(aID uint64, uID uint64, price uint64) {
 	var temp Package
 	found, index := _aucExists(aID)
 	if found {
 		temp.UserID = uID
 		temp.Command = "curPrice"
+		temp.AuctionID = aID
 		temp.Data.Value = price
 		jsonData, err := json.Marshal(temp)
 		if err != nil {
@@ -164,13 +165,14 @@ func _updateClient(aID int, uID int, price int) {
 	}
 }
 
-func _updateUsers(aID int, uID int) {
+func _updateUsers(aID uint64, uID uint64) {
 	time.Sleep(1 * time.Second)
 	var temp Package
 	found, index := _aucExists(aID)
 	if found {
 		temp.Command = "usrjoin"
 		temp.UserID = uID
+		temp.AuctionID = aID
 		jsonData, err := json.Marshal(temp)
 		if err != nil {
 			//fmt.Println(err)
@@ -183,11 +185,11 @@ func _updateUsers(aID int, uID int) {
 	}
 }
 
-func _generateAucID() int {
-	aucID := rand.Intn(100000-10) + 10
+func _generateAucID() uint64 {
+	aucID := rand.Uint64()
 	exist, _ := _aucExists(aucID)
 	for exist {
-		aucID := rand.Intn(100000-10) + 10
+		aucID := rand.Uint64()
 		exist, _ = _aucExists(aucID)
 	}
 	return aucID
