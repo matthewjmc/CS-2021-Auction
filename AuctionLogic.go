@@ -113,8 +113,6 @@ func makeBidMain(u *UserHashTable, h *AuctionHashTable, report_price chan uint64
 	}
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 func createUserMain(h *UserHashTable, report chan User, report_log chan string, uid uint64, name string) {
 	if !h.SearchUserIDHashTable(uid) {
 		newUser := CreateUser("username"+fmt.Sprint(uid), name, uid)
