@@ -93,9 +93,10 @@ func openCon(data Package) {
 		fmt.Println(err)
 	}
 	fmt.Fprintf(connection, string(jsonify(data))+"\n")
-	//fmt.Println("User has Joined Room")
+	go readInput(connection, data.AuctionID, data.UserID)
 	for {
 		received := Package{}
+		//fmt.Println("Waiting For Data")
 		rawdata, err := bufio.NewReader(connection).ReadString('\n')
 		//fmt.Println(rawdata)
 		if err != nil {
@@ -105,6 +106,8 @@ func openCon(data Package) {
 		json.Unmarshal([]byte(rawdata), &received)
 		if received.Command == "usrjoin" {
 			fmt.Printf("User %d has Joined the Room\n", received.UserID)
+		} else if received.Command == "curPrice" {
+			fmt.Printf("Current Price -----> %d\n", received.Data.Value)
 		}
 	}
 
@@ -113,9 +116,24 @@ func openCon(data Package) {
 func jsonify(data Package) []byte {
 	var jsonData []byte
 	jsonData, err := json.Marshal(data)
-	//fmt.Println(jsonData)
 	if err != nil {
 		fmt.Println(err)
 	}
 	return jsonData
+}
+
+func readInput(con net.Conn, aID int, uID int) {
+	temp := Package{}
+	temp.UserID = uID
+	temp.AuctionID = aID
+	temp.Command = "bid"
+	temp.Data.Item = "price"
+	for {
+		var price int
+		fmt.Scanf("%d", &price)
+		temp.Data.Value = price
+		jsondata := jsonify(temp)
+		fmt.Fprintf(con, string(jsondata)+"\n")
+		fmt.Println("Data Sent")
+	}
 }
