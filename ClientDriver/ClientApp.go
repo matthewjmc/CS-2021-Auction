@@ -33,11 +33,14 @@ func main() {
 	switch userIn {
 	case 1:
 		data.Command = "create"
+		data.UserID = uID
 		fmt.Println("Creating Auction!!!")
 	case 2:
 		data.Command = "join"
+		data.UserID = uID
 		fmt.Println("Please Enter Auction To Join:")
 		fmt.Scanf("%d", &aID)
+		data.AuctionID = aID
 
 	}
 	returnVal := handleCon(data)

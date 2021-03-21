@@ -2,14 +2,13 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net"
 	"time"
 
-	//"bufio"
 	"encoding/json"
 	"math/rand"
 	"os"
-	"runtime"
 	"strconv"
 )
 
@@ -23,12 +22,21 @@ type Package struct {
 	}
 }
 
+var timeouts = 0
 var serverIP = "10.104.0.9:19530"
 
 func main() {
+	LOG_FILE := "logs/bench.txt"
+	// open log file
+	logFile, err := os.OpenFile(LOG_FILE, os.O_APPEND|os.O_RDWR|os.O_CREATE, 0644)
+	if err != nil {
+		log.Panic(err)
+	}
+	defer logFile.Close()
+	log.SetOutput(logFile)
+	log.SetFlags(log.Lshortfile | log.LstdFlags)
 	arguments := os.Args
 	args, _ := strconv.Atoi(arguments[1])
-	runtime.GOMAXPROCS(4) //Use 4 Cores
 	n := 0
 	for n < args {
 		user := Package{}
@@ -62,12 +70,17 @@ func handleCon(data Package) {
 	//Convert Struct to JSON Document
 	var jsonData []byte
 	jsonData, err = json.Marshal(data)
-	fmt.Println("AuctionID:", data.AuctionID)
 	if err != nil {
 		fmt.Println(err)
 	}
 	//Transmit and Receive
 	for {
+		if e, ok := err.(net.Error); ok && e.Timeout() {
+			timeouts++
+		} else if err != nil {
+			log.Println(err)
+		}
+
 		fmt.Fprintf(connection, string(jsonData)+"\n")
 		//data, _ := bufio.NewReader(connection).ReadString('\n')
 		//fmt.Println("From -->", data)
