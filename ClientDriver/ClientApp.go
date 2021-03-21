@@ -41,6 +41,7 @@ func main() {
 		data.UserID = returnVal.UserID
 		data.Command = "join"
 		returnVal = handleCon(data)
+		fmt.Printf("Joined Auction %d\n", data.AuctionID)
 	}
 	for {
 
