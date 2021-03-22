@@ -10,11 +10,8 @@ import (
 	"strings"
 	"time"
 	"unicode"
-	// "encoding/gob"
 )
 
-// locate on the compute server S1 and S2 to send the CPU idle percentage
-// to the load to determine the address assign to new auction
 func main() {
 	for {
 		conn, err := net.Dial("tcp4", "load.mcmullin.org:19530")
@@ -27,7 +24,7 @@ func main() {
 			// reader := bufio.NewReader(data)
 			// fmt.Print(">> ")
 			// text, _ := reader.ReadString('\n')
-			fmt.Fprintf(conn, data+"\n")
+			fmt.Fprintf(conn, "FROM S2:"+data+"\n")
 
 			message, _ := bufio.NewReader(conn).ReadString('\n')
 			fmt.Print("->: " + message)

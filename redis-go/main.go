@@ -14,6 +14,11 @@ type Client struct {
 	Command string
 }
 
+type Address struct {
+	addr1: "com1.mcmullin.org:19530"
+	addr2: "com2.mcmullin.org:19530"
+}
+
 type Auction struct {
 	Description      string
 	AddressIP        string
@@ -68,6 +73,38 @@ func keygen(c Client) (key string) {
 	var newkey = count + 1
 	key1 := strconv.Itoa(newkey)
 	fmt.Println(key1, reflect.TypeOf(key1))
+	//set IP address to that key
+	if S1_Usage > S2_Usage{
+		src := Auction{}
+		err = json.Unmarshal([]byte(val), &src)
+		var newval = Auction{
+		Description:      src.Description,
+		AddressIP:        Address.addr1,
+		ConnectedClients: src.ConnectedClients,
+	}
+	entry, err := json.Marshal(newval)
+	client.Set(id, entry, 0)
+	}else if S2_Usage > S1_Usage{
+		src := Auction{}
+		err = json.Unmarshal([]byte(val), &src)
+		var newval = Auction{
+		Description:      src.Description,
+		AddressIP:        Address.addr2,
+		ConnectedClients: src.ConnectedClients,
+	}
+	entry, err := json.Marshal(newval)
+	client.Set(id, entry, 0)
+	}else {
+		src := Auction{}
+		err = json.Unmarshal([]byte(val), &src)
+		var newval = Auction{
+		Description:      src.Description,
+		AddressIP:        Address.addr1,
+		ConnectedClients: src.ConnectedClients,
+	}
+	entry, err := json.Marshal(newval)
+	client.Set(id, entry, 0)
+	}
 	return key1
 }
 
