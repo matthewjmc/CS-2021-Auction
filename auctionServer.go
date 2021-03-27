@@ -58,6 +58,7 @@ func serverInit() {
 			return
 		}
 		wg.Add(1)
+		//fmt.Println(n)
 		go requestHandle(con, &wg)
 		n++
 		wg.Wait()
@@ -70,6 +71,7 @@ func requestHandle(con net.Conn, wg *sync.WaitGroup) { //Check make Sure other t
 	defer con.Close()
 	for {
 		rawdata, err := bufio.NewReader(con).ReadString('\n')
+		//fmt.Println(rawdata)
 		json.Unmarshal([]byte(rawdata), &received)
 		if err != nil {
 			////fmt.Println(err)
@@ -104,20 +106,18 @@ func requestHandle(con net.Conn, wg *sync.WaitGroup) { //Check make Sure other t
 			returnData(con, string(jsonData))
 			go _updateUsers(received.AuctionID, received.UserID)
 
-			// uChan := make(chan uint64)
+			// uChan := make(chan AuctionSystem.User)
 			// sChan := make(chan string)
-			AuctionSystem.CreateUserMain(U, received.UserID, "Demo")
-			//AuctionSystem.CreateUserMain(U, uChan, sChan, received.UserID, "Demo")
+			// AuctionSystem.CreateUserMain(U, uChan, sChan, received.UserID, "Demo")
 
 		} else if loggedIn {
 			switch received.Command {
 			case "bid":
 				//fmt.Println("User Requesting to Bid")
-				go _updateClient(received.AuctionID, received.UserID, received.Data.Value, received.Time)
+				_updateClient(received.AuctionID, received.UserID, received.Data.Value, received.Time)
 				// pChan := make(chan uint64)
 				// sChan := make(chan string)
 				// AuctionSystem.MakeBidMain(U, A, pChan, sChan, received.UserID, received.AuctionID, received.Data.Value)
-				AuctionSystem.MakeBidMain(U, A, received.UserID, received.AuctionID, received.Data.Value)
 			}
 		}
 	}
@@ -145,6 +145,7 @@ func addUsr(con net.Conn, aID uint64, uID uint64) {
 					ConnectedClients: []net.Conn{con}})
 		}
 	}
+	//fmt.Println(aucSessions)
 }
 
 func _aucExists(aID uint64) (bool, int) {
@@ -173,6 +174,7 @@ func _updateClient(aID uint64, uID uint64, price uint64, sTime []time.Time) {
 		for i := 0; i < len(auc.ConnectedClients); i++ {
 			fmt.Fprintf(auc.ConnectedClients[i], string(jsonData)+"\n")
 		}
+		//fmt.Println("Client Prices have been updated")
 	}
 }
 
@@ -189,6 +191,7 @@ func _updateUsers(aID uint64, uID uint64) {
 			//fmt.Println(err)
 		}
 		auc := aucSessions[index]
+		//fmt.Println(auc)
 		for i := 0; i < len(auc.ConnectedClients); i++ {
 			fmt.Fprintf(auc.ConnectedClients[i], string(jsonData)+"\n")
 		}

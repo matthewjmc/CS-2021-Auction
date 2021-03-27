@@ -1,13 +1,11 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
-	"log"
 	"net"
+	"sync"
 	"time"
 
-	"bufio"
 	"encoding/json"
 	"math/rand"
 	"os"
@@ -24,21 +22,13 @@ type Package struct {
 	}
 }
 
-var timeouts = 0
-var serverIP = "10.104.0.9:19530"
+var response []time.Duration
+var serverIP = "143.198.212.115:8888"
 
 func main() {
-	LOG_FILE := "logs/bench.txt"
-	// open log file
-	logFile, err := os.OpenFile(LOG_FILE, os.O_APPEND|os.O_RDWR|os.O_CREATE, 0644)
-	if err != nil {
-		log.Panic(err)
-	}
-	defer logFile.Close()
-	log.SetOutput(logFile)
-	log.SetFlags(log.Lshortfile | log.LstdFlags)
 	arguments := os.Args
 	args, _ := strconv.Atoi(arguments[1])
+	var wg sync.WaitGroup
 	n := 0
 	for n < args {
 		user := Package{}
@@ -46,19 +36,19 @@ func main() {
 		user.UserID = rand.Intn(2000-1) + 1
 		user.Data.Item = "bid"
 		user.Data.Value = rand.Intn(100000-10) + 10
-
-		go handleCon(user)
+		wg.Add(1)
+		go handleCon(user, n, &wg)
 		n++
-		fmt.Println(n)
 	}
-	for {
+	wg.Wait()
+	fmt.Println("Main: Completed")
 
-	}
 }
 
-func handleCon(data Package) {
+func handleCon(data Package, n int, wg *sync.WaitGroup) {
 	connection, _ := net.Dial("tcp", serverIP)
 	defer connection.Close()
+	defer wg.Done()
 	err := connection.(*net.TCPConn).SetKeepAlive(true)
 	if err != nil {
 		fmt.Println(err)
@@ -76,17 +66,25 @@ func handleCon(data Package) {
 		fmt.Println(err)
 	}
 	//Transmit and Receive
-	for {
-		if e, ok := err.(net.Error); ok && e.Timeout() {
-			timeouts++
-		} else if err != nil {
-			log.Println(err)
-		}
-
+	start := 1
+	for start < n {
+		start := time.Now()
 		fmt.Fprintf(connection, string(jsonData)+"\n")
-		data, _ := bufio.NewReader(connection).ReadString('\n')
-		fmt.Println("From -->", data)
+		//data, _ := bufio.NewReader(connection).ReadString('\n')
+		//fmt.Println("From -->", data)
+		elapsed := time.Since(start)
+		fmt.Println(elapsed)
+		//response = append(response, elapsed)
 		time.Sleep(1 * time.Second)
+		n++
 	}
 
+}
+
+func sum(array []float64) float64 {
+	var result float64 = 0
+	for _, v := range array {
+		result += v
+	}
+	return result
 }
