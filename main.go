@@ -75,6 +75,15 @@ func mainTimeline(A *AuctionHashTable, U *UserHashTable, uid uint64) {
 			fmt.Println(finalAuction, log)
 		}
 		time.Sleep(1 * time.Millisecond)
+	} else if command == "SearchAuction" {
+		var tid uint64
+		fmt.Println("Which auction are you searching for?")
+		fmt.Scanln(&tid)
+		if A.SearchAuctIDHashTable(tid) {
+			fmt.Println("The targeted auction is found within the system")
+		} else {
+			fmt.Println("The targeted auction is not found within the system")
+		}
 	}
 
 }
