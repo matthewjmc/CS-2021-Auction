@@ -27,6 +27,7 @@ type Data struct {
 	itemname     string
 	biddingValue uint64
 	biddingStep  uint64
+	duration     time.Duration
 }
 
 func mainTimeline(A *AuctionHashTable, U *UserHashTable, instructions Data) {
@@ -44,7 +45,7 @@ func mainTimeline(A *AuctionHashTable, U *UserHashTable, instructions Data) {
 	} else if command == "Auction" || command == "auction" {
 		report_auction := make(chan Auction)
 		report_log := make(chan string)
-		go CreateAuctionMain(U, A, report_auction, report_log, instructions.uid, instructions.aid, instructions.biddingValue, instructions.biddingStep)
+		go CreateAuctionMain(U, A, instructions.uid, instructions.aid, instructions.biddingValue, instructions.biddingStep, instructions.duration, instructions.itemname)
 		newAuction := <-report_auction
 		log := <-report_log
 		fmt.Println(newAuction, log)
@@ -90,35 +91,41 @@ func mainTimeline(A *AuctionHashTable, U *UserHashTable, instructions Data) {
 
 var wg sync.WaitGroup
 
-func MakeBidMain(u *UserHashTable, h *AuctionHashTable, uid uint64, targetid uint64, placeVal uint64) {
-	bidTime := time.Now().Format(time.RFC3339Nano)
-	currUser := *u.AccessUserHash(uid)
-	newBid := CreateBid(currUser, placeVal, bidTime)
-	target := h.AccessHashAuction(targetid)
-	target.UpdateAuctionWinner(newBid)
-	h.AuctionHashAccessUpdate(*target)
-	// report_price <- newBid.bidPrice
-	// report_log <- "auction has been updated completely"
+func MakeBidMain(u *UserHashTable, h *AuctionHashTable, uid uint64, targetid uint64, placeVal uint64) (bool, uint64) {
+	if !u.SearchUserIDHashTable(uid) {
+		return false, 1 // code 1 , the user has not been found within the system.
+	} else if !h.SearchAuctIDHashTable(targetid) {
+		return false, 2 // code 2 , the auction has not been found within the system.
+	} else {
+		bidTime := time.Now().Format(time.RFC3339Nano)
+		currUser := *u.AccessUserHash(uid)
+		newBid := CreateBid(currUser, placeVal, bidTime)
+		target := h.AccessHashAuction(targetid)
+		target.UpdateAuctionWinner(newBid)
+		h.AuctionHashAccessUpdate(*target)
+		return true, 0 // code 0 . the bid has been made and updated properly.
+	}
 }
 
-func CreateUserMain(h *UserHashTable, uid uint64, name string) {
+func CreateUserMain(h *UserHashTable, uid uint64, name string) (bool, uint64) {
 	if !h.SearchUserIDHashTable(uid) {
 		newUser := CreateUser("username"+fmt.Sprint(uid), name, uid)
-		// report <- newUser
 		h.InsertUserToHash(newUser)
-		// report_log <- "account has been created completely"
+		return true, 0 // code 0 , the user has not been found within the system, creating new user object.
 	} else {
-		fmt.Println("The user has already registered into the system")
+		return false, 1 // code 1 , the user has been found in the system.
 	}
 }
 
-func CreateAuctionMain(U *UserHashTable, A *AuctionHashTable, auction chan Auction, report_log chan string, uid uint64, aid uint64, initial uint64, step uint64) {
+func CreateAuctionMain(U *UserHashTable, A *AuctionHashTable, uid uint64, aid uint64, initial uint64, step uint64, duration time.Duration, itemName string) (bool, uint64) {
 	user := U.AccessUserHash(uid)
 	if !A.SearchAuctIDHashTable(aid) {
-		newAuction := CreateAuction(*user, initial, step, aid)
-		auction <- *newAuction.CreatedAuction // This line is used to notate new user created.
-		report_log <- "auction has been created completely"
+		newAuction := CreateAuction(*user, initial, step, aid, duration, itemName)
+		A.InsertAuctToHash(newAuction.CreatedAuction)
+		return true, 0 // code 0, auction has not been found within the system, creating new auction object.
 	} else {
-		fmt.Println("The Auction has already been created.")
+		return false, 1 // error code 1 , auction has been found in the system.
 	}
 }
+
+// createAuction() and createAuctionMain(0) have been modified to also retrieve two more parameters which are the ongoing duration in hours and the itemname as a string.

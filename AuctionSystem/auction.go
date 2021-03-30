@@ -168,10 +168,7 @@ func (b *AuctionLinkedList) searchAuctNameInLinkedList(k Auction) bool { //For c
 	return false
 }
 
-func CreateAuction(auctioneer User, initBid uint64, bidStep uint64, id uint64) AuctionReport {
-
-	var itemName string = "testItem"
-	var duration time.Duration = 1
+func CreateAuction(auctioneer User, initBid uint64, bidStep uint64, id uint64, duration time.Duration, itemName string) AuctionReport {
 
 	auction := Auction{}
 	auction = Auction{
@@ -196,9 +193,6 @@ func CreateAuction(auctioneer User, initBid uint64, bidStep uint64, id uint64) A
 
 func (a *Auction) UpdateAuctionWinner(b Bid) string {
 
-	//fmt.Println("bid time ", b.bidTime)
-	//fmt.Println("end time", a.endTime)
-
 	if b.bidTime > a.EndTime {
 		return "The auction has already ended"
 	}
@@ -214,8 +208,6 @@ func (a *Auction) UpdateAuctionWinner(b Bid) string {
 	report := fmt.Sprint(a.CurrWinnerID) + "is now the winner of auction" + fmt.Sprint(a.AuctionID)
 
 	return report
-
-	// where a is the updated auction.
 }
 
 // Create bidding to be used to update the auction.
