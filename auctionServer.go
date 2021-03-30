@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"log"
 	"math/rand"
 	"net"
 	"sync"
@@ -33,9 +34,13 @@ type Auction struct { //Auctions Running at one time
 	ConnectedClients []net.Conn
 }
 
+/* Global Variables */
 var aucSessions = []Auction{} //All Connected Auction
 var A = AuctionSystem.AuctionAllocate()
 var U = AuctionSystem.UserAllocate()
+
+//var hashTable =  map[uint64]Auction
+var hashTable = make(map[uint64]Auction) //Hash Table to Storing Current Auction Data
 
 func main() {
 	serverInit()
@@ -46,7 +51,7 @@ func serverInit() {
 	var wg sync.WaitGroup                       //Ensure Data Integrity
 	stream, err := net.Listen("tcp4", ":19530") //Listen at port 19530
 	if err != nil {
-		//fmt.Println(err)
+		log.Println(err)
 		return
 	}
 	defer stream.Close()
@@ -54,11 +59,10 @@ func serverInit() {
 	for {
 		con, err := stream.Accept()
 		if err != nil {
-			//fmt.Println(err)
+			log.Println(err)
 			return
 		}
 		wg.Add(1)
-		//fmt.Println(n)
 		go requestHandle(con, &wg)
 		n++
 		wg.Wait()
@@ -71,10 +75,8 @@ func requestHandle(con net.Conn, wg *sync.WaitGroup) { //Check make Sure other t
 	defer con.Close()
 	for {
 		rawdata, err := bufio.NewReader(con).ReadString('\n')
-		//fmt.Println(rawdata)
 		json.Unmarshal([]byte(rawdata), &received)
 		if err != nil {
-			////fmt.Println(err)
 			return
 		}
 		if received.Command == "create" {
@@ -85,20 +87,18 @@ func requestHandle(con net.Conn, wg *sync.WaitGroup) { //Check make Sure other t
 			var jsonData []byte
 			jsonData, err = json.Marshal(tmp)
 			returnData(con, string(jsonData))
-			//fmt.Printf("User %d Has Created Auction %d\n", received.UserID, tmp.Data.Value)
 			wg.Done()
 
 			//Update Data in Cache
 			aChan := make(chan AuctionSystem.Auction)
 			sChan := make(chan string)
-			AuctionSystem.CreateAuctionMain(U, A, aChan, sChan, received.UserID, tmp.Data.Value, 100, 25) //Last 2 params  InitBid, StepSize
+			AuctionSystem.CreateAuctionMain(U, A, aChan, sChan, received.UserID, tmp.Data.Value, 100, 25)
 
 		} else if !loggedIn && received.Command == "join" {
 			addUsr(con, received.AuctionID, received.UserID)
 			wg.Done()
-			fmt.Printf("User %d has Joined Auction %d\n", received.UserID, received.AuctionID)
+			// fmt.Printf(" %d has Joined Auction %d\n", received.UserID, received.AuctionID)
 			loggedIn = true
-
 			tmp := Package{}
 			tmp.Command = "Success"
 			var jsonData []byte
@@ -106,60 +106,69 @@ func requestHandle(con net.Conn, wg *sync.WaitGroup) { //Check make Sure other t
 			returnData(con, string(jsonData))
 			go _updateUsers(received.AuctionID, received.UserID)
 
-			// uChan := make(chan AuctionSystem.User)
-			// sChan := make(chan string)
-			// AuctionSystem.CreateUserMain(U, uChan, sChan, received.UserID, "Demo")
+			AuctionSystem.CreateUserMain(U, received.UserID, "Demo")
 
 		} else if loggedIn {
 			switch received.Command {
 			case "bid":
-				//fmt.Println("User Requesting to Bid")
-				_updateClient(received.AuctionID, received.UserID, received.Data.Value, received.Time)
-				// pChan := make(chan uint64)
-				// sChan := make(chan string)
-				// AuctionSystem.MakeBidMain(U, A, pChan, sChan, received.UserID, received.AuctionID, received.Data.Value)
+				go _updateClient(received.AuctionID, received.UserID, received.Data.Value, received.Time)
+				AuctionSystem.MakeBidMain(U, A, received.UserID, received.AuctionID, received.Data.Value)
 			}
 		}
 	}
 }
 
 func returnData(con net.Conn, data string) {
-	fmt.Fprintf(con, string(data)+"\n") //Fix this
+	fmt.Fprintf(con, string(data)+"\n")
 }
 
 func addUsr(con net.Conn, aID uint64, uID uint64) {
-	exists, index := _aucExists(aID)
+	// exists, index := _aucExists(aID)
 
-	if len(aucSessions) == 0 && !exists {
-		aucSessions = append(aucSessions,
-			Auction{
-				AuctionID:        aID,
-				ConnectedClients: []net.Conn{con}})
+	// if len(aucSessions) == 0 && !exists {
+	// 	aucSessions = append(aucSessions,
+	// 		Auction{
+	// 			AuctionID:        aID,
+	// 			ConnectedClients: []net.Conn{con}})
+	// } else {
+	// 	if exists {
+	// 		aucSessions[index].ConnectedClients = append(aucSessions[index].ConnectedClients, con)
+	// 	} else {
+	// 		aucSessions = append(aucSessions,
+	// 			Auction{
+	// 				AuctionID:        aID,
+	// 				ConnectedClients: []net.Conn{con}})
+	// 	}
+	// }
+	if _aucExists(aID) {
+		temp := hashTable[aID]
+		temp.ConnectedClients = append(temp.ConnectedClients, con)
+		hashTable[aID] = temp
 	} else {
-		if exists {
-			aucSessions[index].ConnectedClients = append(aucSessions[index].ConnectedClients, con)
-		} else {
-			aucSessions = append(aucSessions,
-				Auction{
-					AuctionID:        aID,
-					ConnectedClients: []net.Conn{con}})
+		temp := Auction{
+			AuctionID:        aID,
+			ConnectedClients: []net.Conn{con},
 		}
+		hashTable[aID] = temp
 	}
-	//fmt.Println(aucSessions)
 }
 
-func _aucExists(aID uint64) (bool, int) {
-	for i := 0; i < len(aucSessions); i++ {
-		if aucSessions[i].AuctionID == aID {
-			return true, i
-		}
+func _aucExists(aID uint64) bool {
+	// for i := 0; i < len(aucSessions); i++ {
+	// 	if aucSessions[i].AuctionID == aID {
+	// 		return true, i
+	// 	}
+	// }
+	// return false, 0
+	if _, ok := hashTable[aID]; ok {
+		return true
 	}
-	return false, 0
+	return false
 }
 
 func _updateClient(aID uint64, uID uint64, price uint64, sTime []time.Time) {
 	var temp Package
-	found, index := _aucExists(aID)
+	found := _aucExists(aID)
 	if found {
 		temp.UserID = uID
 		temp.Command = "curPrice"
@@ -168,30 +177,33 @@ func _updateClient(aID uint64, uID uint64, price uint64, sTime []time.Time) {
 		temp.Time = append(sTime, time.Now())
 		jsonData, err := json.Marshal(temp)
 		if err != nil {
-			//fmt.Println(err)
+			log.Println(err)
 		}
-		auc := aucSessions[index]
+		auc := hashTable[aID]
 		for i := 0; i < len(auc.ConnectedClients); i++ {
 			fmt.Fprintf(auc.ConnectedClients[i], string(jsonData)+"\n")
 		}
-		//fmt.Println("Client Prices have been updated")
+		// auc := aucSessions[index]
+		// for i := 0; i < len(auc.ConnectedClients); i++ {
+		// 	fmt.Fprintf(auc.ConnectedClients[i], string(jsonData)+"\n")
+		// }
 	}
 }
 
 func _updateUsers(aID uint64, uID uint64) {
 	time.Sleep(1 * time.Second)
 	var temp Package
-	found, index := _aucExists(aID)
+	found := _aucExists(aID)
 	if found {
 		temp.Command = "usrjoin"
 		temp.UserID = uID
 		temp.AuctionID = aID
 		jsonData, err := json.Marshal(temp)
 		if err != nil {
-			//fmt.Println(err)
+			log.Println(err)
 		}
-		auc := aucSessions[index]
-		//fmt.Println(auc)
+		//auc := aucSessions[index]
+		auc := hashTable[aID]
 		for i := 0; i < len(auc.ConnectedClients); i++ {
 			fmt.Fprintf(auc.ConnectedClients[i], string(jsonData)+"\n")
 		}
@@ -200,10 +212,10 @@ func _updateUsers(aID uint64, uID uint64) {
 
 func _generateAucID() uint64 {
 	aucID := rand.Uint64()
-	exist, _ := _aucExists(aucID)
+	exist := _aucExists(aucID)
 	for exist {
 		aucID := rand.Uint64()
-		exist, _ = _aucExists(aucID)
+		exist = _aucExists(aucID)
 	}
 	return aucID
 }

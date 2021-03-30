@@ -36,7 +36,7 @@ func mainTimeline(A *AuctionHashTable, U *UserHashTable, instructions Data) {
 	if command == "User" || command == "user" {
 		user_report := make(chan User)
 		report_log := make(chan string)
-		go CreateUserMain(U, user_report, report_log, instructions.uid, instructions.fullname)
+		go CreateUserMain(U, instructions.uid, instructions.fullname)
 		newUser := <-user_report
 		log := <-report_log
 		fmt.Println(log, newUser)
@@ -55,7 +55,7 @@ func mainTimeline(A *AuctionHashTable, U *UserHashTable, instructions Data) {
 		} else {
 			report_price := make(chan uint64)
 			report_log := make(chan string)
-			go MakeBidMain(U, A, report_price, report_log, instructions.uid, instructions.aid, instructions.biddingValue)
+			go MakeBidMain(U, A, instructions.uid, instructions.aid, instructions.biddingValue)
 			finalAuction := <-report_price
 			log := <-report_log
 			fmt.Println(finalAuction, log)
@@ -90,23 +90,23 @@ func mainTimeline(A *AuctionHashTable, U *UserHashTable, instructions Data) {
 
 var wg sync.WaitGroup
 
-func MakeBidMain(u *UserHashTable, h *AuctionHashTable, report_price chan uint64, report_log chan string, uid uint64, targetid uint64, placeVal uint64) {
+func MakeBidMain(u *UserHashTable, h *AuctionHashTable, uid uint64, targetid uint64, placeVal uint64) {
 	bidTime := time.Now().Format(time.RFC3339Nano)
 	currUser := *u.AccessUserHash(uid)
 	newBid := CreateBid(currUser, placeVal, bidTime)
 	target := h.AccessHashAuction(targetid)
 	target.UpdateAuctionWinner(newBid)
 	h.AuctionHashAccessUpdate(*target)
-	report_price <- newBid.bidPrice
-	report_log <- "auction has been updated completely"
+	// report_price <- newBid.bidPrice
+	// report_log <- "auction has been updated completely"
 }
 
-func CreateUserMain(h *UserHashTable, report chan User, report_log chan string, uid uint64, name string) {
+func CreateUserMain(h *UserHashTable, uid uint64, name string) {
 	if !h.SearchUserIDHashTable(uid) {
 		newUser := CreateUser("username"+fmt.Sprint(uid), name, uid)
-		report <- newUser
+		// report <- newUser
 		h.InsertUserToHash(newUser)
-		report_log <- "account has been created completely"
+		// report_log <- "account has been created completely"
 	} else {
 		fmt.Println("The user has already registered into the system")
 	}
