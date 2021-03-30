@@ -47,6 +47,7 @@ func HashAuction(targetID uint64) uint64 {
 func (h *AuctionHashTable) InsertAuctToHash(auction *Auction) {
 	index := HashAuction(auction.AuctionID)
 	h.array[index].insertAuctToLinkedList(*auction)
+	fmt.Println("Added Success")
 }
 
 // Continuation of hash function insertion to place it within a linked list as a node.
@@ -76,6 +77,7 @@ func (b *AuctionLinkedList) searchAuctIDLinkedList(auctionid uint64) bool { //Fo
 		}
 		currentNode = currentNode.next
 	}
+	//fmt.Println("There is no auction with that ID in the memory.")
 	return false
 }
 
@@ -116,7 +118,7 @@ func (b *AuctionLinkedList) accessLinkedListAuction(auctionID uint64) *Auction {
 	currentNode := b.head
 	for currentNode != nil {
 		if currentNode.key.AuctionID == auctionID {
-			//fmt.Println("The auction is being accessed")
+			fmt.Println("The auction is being accessed")
 			return &currentNode.key
 		}
 		currentNode = currentNode.next
@@ -162,14 +164,11 @@ func (b *AuctionLinkedList) searchAuctNameInLinkedList(k Auction) bool { //For c
 		}
 		currentNode = currentNode.next
 	}
-	//fmt.Println("There is no auction with that name in the memory.")
+	fmt.Println("There is no auction with that name in the memory.")
 	return false
 }
 
-func CreateAuction(auctioneer User, initBid uint64, bidStep uint64, id uint64) AuctionReport {
-
-	var itemName string = "testItem"
-	var duration time.Duration = 1
+func CreateAuction(auctioneer User, initBid uint64, bidStep uint64, id uint64, duration time.Duration, itemName string) AuctionReport {
 
 	auction := Auction{}
 	auction = Auction{
@@ -194,9 +193,6 @@ func CreateAuction(auctioneer User, initBid uint64, bidStep uint64, id uint64) A
 
 func (a *Auction) UpdateAuctionWinner(b Bid) string {
 
-	//fmt.Println("bid time ", b.bidTime)
-	//fmt.Println("end time", a.endTime)
-
 	if b.bidTime > a.EndTime {
 		return "The auction has already ended"
 	}
@@ -212,8 +208,6 @@ func (a *Auction) UpdateAuctionWinner(b Bid) string {
 	report := fmt.Sprint(a.CurrWinnerID) + "is now the winner of auction" + fmt.Sprint(a.AuctionID)
 
 	return report
-
-	// where a is the updated auction.
 }
 
 // Create bidding to be used to update the auction.

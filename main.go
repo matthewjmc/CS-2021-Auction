@@ -10,79 +10,80 @@ import (
 // AuctionLogic is a file composed of Tagun's and Katisak's code altogether.
 // The file is also being separated into 3 files which are auction_method, auction_timeline, data_structure.
 
+/*
 func main() {
 	//multipleUserTest()
 	//testTimeFormat()
 	A := AuctionAllocate()
 	U := UserAllocate()
 	// modification of memory allocation to be dynamically allocating.
-	var uid uint64
-	fmt.Println("What is your user ID")
-	fmt.Scanln(&uid)
-	for {
-		mainTimeline(A, U, uid)
-	}
+	mainTimeline(A, U)
+}*/
+type Data struct {
+	command      string
+	uid          uint64
+	fullname     string
+	aid          uint64
+	itemname     string
+	biddingValue uint64
+	biddingStep  uint64
+	duration     time.Duration
 }
 
-func mainTimeline(A *AuctionHashTable, U *UserHashTable, uid uint64) {
-	var command string
+func mainTimeline(A *AuctionHashTable, U *UserHashTable, instructions Data) {
 
-	fmt.Println("Command?")
-	fmt.Scanln(&command)
+	command := instructions.command
 
 	if command == "User" || command == "user" {
-		if U.SearchUserIDHashTable(uid) {
-			fmt.Println("The account has already been occupied")
-		} else {
-			userid_report := make(chan uint64)
-			report_log := make(chan string)
-			var fullname string
-			fmt.Println("fullname")
-			fmt.Scanln(&fullname)
-			go createUserMain(U, userid_report, report_log, uid, fullname)
-			newUser := <-userid_report
-			log := <-report_log
-			fmt.Println(log, newUser)
-		}
+		user_report := make(chan User)
+		report_log := make(chan string)
+		go CreateUserMain(U, instructions.uid, instructions.fullname)
+		newUser := <-user_report
+		log := <-report_log
+		fmt.Println(log, newUser)
+
 	} else if command == "Auction" || command == "auction" {
 		report_auction := make(chan Auction)
 		report_log := make(chan string)
-		var initbid, step uint64
-		fmt.Println("enter initbid")
-		fmt.Scanln(&initbid)
-		fmt.Println("enter step")
-		fmt.Scanln(&step)
-		go createAuctionMain(U, A, report_auction, report_log, uid, Randomize(100, 999), initbid, step)
+		go CreateAuctionMain(U, A, instructions.uid, instructions.aid, instructions.biddingValue, instructions.biddingStep, instructions.duration, instructions.itemname)
 		newAuction := <-report_auction
 		log := <-report_log
-		fmt.Println(log)
-		fmt.Println("New created auction is having the id of", newAuction.AuctionID)
-		fmt.Println(newAuction)
+		fmt.Println(newAuction, log)
 	} else if command == "bid" {
-		var tid, price uint64
-		fmt.Println("What is your target auction id")
-		fmt.Scanln(&tid)
-		if !A.SearchAuctIDHashTable(tid) {
+
+		if !A.SearchAuctIDHashTable(instructions.aid) {
 			fmt.Println("The auction has not been found within the memory")
 		} else {
-			fmt.Println("price?")
-			fmt.Scanln(&price)
 			report_price := make(chan uint64)
 			report_log := make(chan string)
-			go makeBidMain(U, A, report_price, report_log, uid, tid, price)
+			go MakeBidMain(U, A, instructions.uid, instructions.aid, instructions.biddingValue)
 			finalAuction := <-report_price
 			log := <-report_log
 			fmt.Println(finalAuction, log)
 		}
-		time.Sleep(1 * time.Millisecond)
-	} else if command == "SearchAuction" {
-		var tid uint64
-		fmt.Println("Which auction are you searching for?")
-		fmt.Scanln(&tid)
-		if A.SearchAuctIDHashTable(tid) {
-			fmt.Println("The targeted auction is found within the system")
+	} else if command == "searchAuction" {
+		if A.SearchAuctIDHashTable(instructions.aid) {
+			fmt.Println("Auction", instructions.aid, " is found within the system")
 		} else {
-			fmt.Println("The targeted auction is not found within the system")
+			fmt.Println("Auction", instructions.aid, " is not found within the system")
+		}
+	} else if command == "deleteAuction" {
+		if A.AuctionHashAccessDelete(instructions.aid) {
+			fmt.Println("Auction", instructions.aid, " has been deleted for the system")
+		} else {
+			fmt.Println("Auction", instructions.aid, " is not found within the system")
+		}
+	} else if command == "searchUser" {
+		if U.SearchUserIDHashTable(instructions.uid) {
+			fmt.Println("Auction", instructions.aid, " is found within the system")
+		} else {
+			fmt.Println("Auction", instructions.aid, " is not found within the system")
+		}
+	} else if command == "deleteUser" {
+		if U.UserHashAccessDelete(instructions.uid) {
+			fmt.Println("Auction", instructions.aid, " has been deleted for the system")
+		} else {
+			fmt.Println("Auction", instructions.aid, " is not found within the system")
 		}
 	}
 
@@ -90,50 +91,41 @@ func mainTimeline(A *AuctionHashTable, U *UserHashTable, uid uint64) {
 
 var wg sync.WaitGroup
 
-func makeBidMain(u *UserHashTable, h *AuctionHashTable, report_price chan uint64, report_log chan string, uid uint64, targetid uint64, placeVal uint64) {
-
-	bidTime := time.Now().Format(time.RFC3339Nano)
+func MakeBidMain(u *UserHashTable, h *AuctionHashTable, uid uint64, targetid uint64, placeVal uint64) (bool, uint64) {
 	if !u.SearchUserIDHashTable(uid) {
-		report_price <- 0
-		report_log <- "The user could not be located within the system."
+		return false, 1 // code 1 , the user has not been found within the system.
+	} else if !h.SearchAuctIDHashTable(targetid) {
+		return false, 2 // code 2 , the auction has not been found within the system.
+	} else {
+		bidTime := time.Now().Format(time.RFC3339Nano)
+		currUser := *u.AccessUserHash(uid)
+		newBid := CreateBid(currUser, placeVal, bidTime)
+		target := h.AccessHashAuction(targetid)
+		target.UpdateAuctionWinner(newBid)
+		h.AuctionHashAccessUpdate(*target)
+		return true, 0 // code 0 . the bid has been made and updated properly.
 	}
-	if !h.SearchAuctIDHashTable(targetid) {
-		report_price <- 0
-		report_log <- "The auction could not be located within the system."
-	}
-	currUser := *u.AccessUserHash(uid)
-	newBid := CreateBid(currUser, placeVal, bidTime)
-	target := h.AccessHashAuction(targetid)
-	target.UpdateAuctionWinner(newBid)
-	h.AuctionHashAccessUpdate(*target)
-	fmt.Println("printed from the function, The auction has been updated successfully")
-	report_price <- target.CurrMaxBid
-	report_log <- "The auction has been updated completely"
 }
 
-func createUserMain(h *UserHashTable, report chan uint64, report_log chan string, uid uint64, name string) {
+func CreateUserMain(h *UserHashTable, uid uint64, name string) (bool, uint64) {
 	if !h.SearchUserIDHashTable(uid) {
 		newUser := CreateUser("username"+fmt.Sprint(uid), name, uid)
 		h.InsertUserToHash(newUser)
-		fmt.Println("New user has been inserted properly")
-		report <- newUser.AccountID
-		report_log <- "account has been created completely"
+		return true, 0 // code 0 , the user has not been found within the system, creating new user object.
 	} else {
-		fmt.Println("The user has already registered into the system")
-		report <- uid
-		report_log <- "account has already been created"
+		return false, 1 // code 1 , the user has been found in the system.
 	}
 }
 
-func createAuctionMain(U *UserHashTable, A *AuctionHashTable, auction chan Auction, report_log chan string, uid uint64, aid uint64, initial uint64, step uint64) {
+func CreateAuctionMain(U *UserHashTable, A *AuctionHashTable, uid uint64, aid uint64, initial uint64, step uint64, duration time.Duration, itemName string) (bool, uint64) {
 	user := U.AccessUserHash(uid)
 	if !A.SearchAuctIDHashTable(aid) {
-		newAuction := CreateAuction(*user, initial, step, aid)
+		newAuction := CreateAuction(*user, initial, step, aid, duration, itemName)
 		A.InsertAuctToHash(newAuction.CreatedAuction)
-		auction <- *newAuction.CreatedAuction
-		report_log <- "auction has been created completely"
+		return true, 0 // code 0, auction has not been found within the system, creating new auction object.
 	} else {
-		auction <- *A.AccessHashAuction(aid)
-		report_log <- "auction has already been declared"
+		return false, 1 // error code 1 , auction has been found in the system.
 	}
 }
+
+// createAuction() and createAuctionMain(0) have been modified to also retrieve two more parameters which are the ongoing duration in hours and the itemname as a string.
