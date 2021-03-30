@@ -9,11 +9,12 @@ type Data struct {
 	itemname     string
 	biddingValue uint64
 	biddingStep  uint64
+	duration     time.Duration
 }
 
 // Data struct is initiated to represent the requirements for each functions.
 
-// current mainTimeline if-elseif conditions are { User, Auction, bid, searchAuction, deleteAuction, searchUser, deleteUser }
+// current mainTimeline if-else if conditions are { User, Auction, bid, searchAuction, deleteAuction, searchUser, deleteUser }
 
 
 Calling users -> create new user and insert it into the storage system , requiring userID and user's full name.
@@ -28,19 +29,21 @@ Calling deleteXXXXX -> will delete the object XXXXX within the system.
 : these functions listed below were initially created to be called and running asynchronously from the main thread.
 
 
-These functions below are the core of the server's process.
+These functions below are the core of the server's process which returns boolean and uint64 as reporting error codes.
 
-### makeBidMain(u *UserHashTable, h *AuctionHashTable, report_price chan uint64, report_log chan string, uid uint64, targetid uint64, placeVal uint64)
-: makeBidMain is called when the "command" is "bid".
-: if some return value is required, Auction which has already been updated and stored at the same place should be the type .
+### MakeBidMain(u *UserHashTable, h *AuctionHashTable, uid uint64, targetid uint64, placeVal uint64) 
+: MakeBidMain is called when the "command" is "bid".
+: code 0 . the bid has been made and updated properly, also returning "true"
+: code 1 , the user has not been found within the system, also returning "false"
+: code 2 , the auction has not been found within the system, also returning "false"
 
-### createUserMain(u *UserHashTable, report chan User, report_log chan string, uid uint64, name string)
+### CreateUserMain(h *UserHashTable, uid uint64, name string) 
 : createUserMain is called when the "command" is "User" or "user".
-: if some return value is required, User should be the type.
+: code 0 , the user has not been found within the system, creating new user object while also returning "true"
+: code 1 , the user has been found in the system, also returning "false"
 
-### createAuctionMain(u *UserHashTable, A *AuctionHashTable, auction chan Auction, report_log chan string, uid uint64, aid uint64, initial uint64, step uint64)
+### CreateAuctionMain(U *UserHashTable, A *AuctionHashTable, uid uint64, aid uint64, initial uint64, step uint64, duration time.Duration, itemName string) 
 : createAuctionMain is called when the "command" is "Auction" or "auction".
-: if some return value is required, Auction should be the type.
+: code 0, auction has not been found within the system, creating new auction object while also returning "true"
+: code 1 , auction has been found in the system, also returning "false"
 
-Note: report_xxx are channels used to return the result from their asynchronous processes back to the main process. 
-      When those functions are called within the main thread, removal of report_xxx chan are required.
