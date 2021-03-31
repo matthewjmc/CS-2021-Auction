@@ -4,8 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"strconv"
-	"sync"
-	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -55,21 +53,38 @@ func DatabaseInit() {
 // username : auction
 // password : " first result usually used in programming world as an intro to everylanguage without spacing ,1"
 
-// Auction struct
-/*
-type Auction struct {
-	AuctionID      uint64
-	AuctioneerID   uint64
-	ItemName       string
-	CurrWinnerID   uint64
-	CurrWinnerName string
-	CurrMaxBid     uint64
-	BidStep        uint64
-	LatestBidTime  string
-	StartTime      string
-	EndTime        string
+func InsertAuctionToDB(auction Auction) bool {
+
+	db, err := sql.Open("mysql", "auction:Helloworld1@tcp(db.mcmullin.org)/auction_system")
+	if err != nil {
+		panic(err.Error())
+		return false
+	}
+	defer db.Close()
+	query := "INSERT INTO auction_table(AuctionID,AuctioneerID,ItemName,CurrWinnerID,CurrWinnerName,CurrMaxBid,BidStep,LatestBidTime,StartTime,EndTime) VALUES ("
+	auctionId := strconv.FormatUint(auction.AuctionID, 10)
+	auctioneerId := "," + strconv.FormatUint(auction.AuctioneerID, 10)
+	itemName := "," + auction.ItemName
+	currWinnerID := "," + strconv.FormatUint(auction.CurrWinnerID, 10)
+	currWinnerName := "," + auction.CurrWinnerName
+	currMaxBid := "," + strconv.FormatUint(auction.CurrMaxBid, 10)
+	bidStep := "," + strconv.FormatUint(auction.BidStep, 10)
+	latestBidTime := "," + fmt.Sprint(auction.LatestBidTime)
+	startTime := "," + auction.StartTime
+	EndTime := "," + auction.EndTime
+
+	fmt.Println(latestBidTime)
+
+	exec := query + auctionId + auctioneerId + itemName + currWinnerID + currWinnerName + currMaxBid + bidStep + latestBidTime + startTime + EndTime + ")"
+	fmt.Println(exec)
+	insert, err := db.Query(exec)
+	if err != nil {
+		panic(err.Error())
+	}
+	defer insert.Close()
+
+	return true
 }
-*/
 
 func InsertUserToDB(user User) bool {
 

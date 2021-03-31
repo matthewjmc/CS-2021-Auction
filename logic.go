@@ -2,9 +2,7 @@ package main
 
 import (
 	. "CS-2021-Auction/AuctionSystem"
-	"database/sql"
 	"fmt"
-	"strconv"
 	"sync"
 	"time"
 
@@ -29,40 +27,6 @@ func main() {
 		EndTime:        time.Now().Add(1 * time.Hour).Format(time.RFC3339Nano),
 	}
 	InsertAuctionToDB(auction)
-}
-
-func InsertAuctionToDB(auction Auction) bool {
-
-	db, err := sql.Open("mysql", "auction:Helloworld1@tcp(db.mcmullin.org)/auction_system")
-	if err != nil {
-		panic(err.Error())
-		return false
-	}
-	defer db.Close()
-	query := "INSERT INTO auction_table(AuctionID,AuctioneerID,ItemName,CurrWinnerID,CurrWinnerName,CurrMaxBid,BidStep,LatestBidTime,StartTime,EndTime) VALUES ("
-	auctionId := strconv.FormatUint(auction.AuctionID, 10)
-	auctioneerId := "," + strconv.FormatUint(auction.AuctioneerID, 10)
-	itemName := "," + auction.ItemName
-	currWinnerID := "," + strconv.FormatUint(auction.CurrWinnerID, 10)
-	currWinnerName := "," + auction.CurrWinnerName
-	currMaxBid := "," + strconv.FormatUint(auction.CurrMaxBid, 10)
-	bidStep := "," + strconv.FormatUint(auction.BidStep, 10)
-	latestBidTime := "," + fmt.Sprint(auction.LatestBidTime)
-	startTime := "," + auction.StartTime
-	EndTime := "," + auction.EndTime
-
-	fmt.Println(latestBidTime)
-
-	exec := query + auctionId + auctioneerId + itemName + currWinnerID + currWinnerName + currMaxBid + bidStep + latestBidTime + startTime + EndTime + ")"
-	fmt.Println(exec)
-	/*
-		insert, err := db.Query(exec)
-		if err != nil {
-			panic(err.Error())
-		}
-		defer insert.Close()
-	*/
-	return true
 }
 
 type Data struct {
@@ -174,10 +138,6 @@ func CreateAuctionMain(U *UserHashTable, A *AuctionHashTable, uid uint64, aid ui
 	}
 }
 
-/*
-module CS-2021-Auction
-
-go 1.16
-
-require github.com/go-sql-driver/mysql v1.5.0
-*/
+// Server : db.mcmullin.org:3306
+// username : auction
+// password : " first result usually used in programming world as an intro to everylanguage without spacing ,1"
