@@ -4,6 +4,7 @@ import (
 	. "CS-2021-Auction/AuctionSystem"
 	"database/sql"
 	"fmt"
+	"strconv"
 	"sync"
 	"time"
 
@@ -12,16 +13,57 @@ import (
 
 // AuctionLogic is a file composed of Tagun's and Katisak's code altogether.
 // The file is also being separated into 3 files which are auction_method, auction_timeline, data_structure.
-/*
+
 func main() {
-	//multipleUserTest()
-	//testTimeFormat()
-	A := AuctionAllocate()
-	U := UserAllocate()
-	// modification of memory allocation to be dynamically allocating.
-	// mainTimeline(A, U, )
+	DatabaseInit()
+	auction := Auction{
+		AuctionID:      1,
+		AuctioneerID:   1,
+		ItemName:       "test",
+		CurrWinnerID:   1,
+		CurrWinnerName: "test2",
+		CurrMaxBid:     100,
+		BidStep:        1000,
+		LatestBidTime:  time.Now().Format(time.RFC3339Nano),
+		StartTime:      time.Now().Format(time.RFC3339Nano),
+		EndTime:        time.Now().Add(1 * time.Hour).Format(time.RFC3339Nano),
+	}
+	InsertAuctionToDB(auction)
 }
-*/
+
+func InsertAuctionToDB(auction Auction) bool {
+
+	db, err := sql.Open("mysql", "auction:Helloworld1@tcp(db.mcmullin.org)/auction_system")
+	if err != nil {
+		panic(err.Error())
+		return false
+	}
+	defer db.Close()
+	query := "INSERT INTO auction_table(AuctionID,AuctioneerID,ItemName,CurrWinnerID,CurrWinnerName,CurrMaxBid,BidStep,LatestBidTime,StartTime,EndTime) VALUES ("
+	auctionId := strconv.FormatUint(auction.AuctionID, 10)
+	auctioneerId := "," + strconv.FormatUint(auction.AuctioneerID, 10)
+	itemName := "," + auction.ItemName
+	currWinnerID := "," + strconv.FormatUint(auction.CurrWinnerID, 10)
+	currWinnerName := "," + auction.CurrWinnerName
+	currMaxBid := "," + strconv.FormatUint(auction.CurrMaxBid, 10)
+	bidStep := "," + strconv.FormatUint(auction.BidStep, 10)
+	latestBidTime := "," + fmt.Sprint(auction.LatestBidTime)
+	startTime := "," + auction.StartTime
+	EndTime := "," + auction.EndTime
+
+	fmt.Println(latestBidTime)
+
+	exec := query + auctionId + auctioneerId + itemName + currWinnerID + currWinnerName + currMaxBid + bidStep + latestBidTime + startTime + EndTime + ")"
+	fmt.Println(exec)
+	/*
+		insert, err := db.Query(exec)
+		if err != nil {
+			panic(err.Error())
+		}
+		defer insert.Close()
+	*/
+	return true
+}
 
 type Data struct {
 	command      string
@@ -132,120 +174,10 @@ func CreateAuctionMain(U *UserHashTable, A *AuctionHashTable, uid uint64, aid ui
 	}
 }
 
-func _insertAuctionToDB(auction Auction) bool {
+/*
+module CS-2021-Auction
 
-	db, err := sql.Open("mysql", "username:password@tcp(127.0.0.1:3306)/database_name")
+go 1.16
 
-	if err != nil {
-		panic(err.Error())
-	}
-	// error handler whether what causes the error regarding the connection to the database.
-	defer db.Close()
-	// perform a db.Query CRUD commands inputted.
-	insert, err := db.Query("INSERT INTO auction_table VALUES ( 2, 'T' )")
-	if err != nil {
-		panic(err.Error())
-	}
-	defer insert.Close()
-	// error handler whether what causes the error regarding the connection to the database.
-	return true
-}
-
-func _insertUserToDB(user User) bool {
-
-	db, err := sql.Open("mysql", "username:password@tcp(127.0.0.1:3306)/database_name")
-
-	if err != nil {
-		panic(err.Error())
-	}
-	// error handler whether what causes the error regarding the connection to the database.
-	defer db.Close()
-	// perform a db.Query CRUD commands inputted.
-	insert, err := db.Query("INSERT INTO user_table VALUES ( 2, 'T' )")
-	if err != nil {
-		panic(err.Error())
-	}
-	defer insert.Close()
-	// error handler whether what causes the error regarding the connection to the database.
-	return true
-}
-
-func _insertBidToDB(bid Bid) bool {
-
-	db, err := sql.Open("mysql", "username:password@tcp(127.0.0.1:3306)/database_name")
-
-	if err != nil {
-		panic(err.Error())
-	}
-	// error handler whether what causes the error regarding the connection to the database.
-	defer db.Close()
-	// perform a db.Query CRUD commands inputted.
-	insert, err := db.Query("INSERT INTO bidding_table VALUES ( 2, 'T' )")
-	if err != nil {
-		panic(err.Error())
-	}
-	defer insert.Close()
-	// error handler whether what causes the error regarding the connection to the database.
-	return true
-}
-
-func main() {
-
-	db, err := sql.Open("mysql", "auction:Helloworld1@tcp(db.mcmullin.org)/")
-	if err != nil {
-		fmt.Println(err.Error())
-	} else {
-		fmt.Println("Database created successfully")
-	}
-	_, err = db.Exec("CREATE DATABASE auction_system")
-	if err != nil {
-		fmt.Println(err.Error())
-	} else {
-		fmt.Println("Successfully created database..")
-	}
-	_, err = db.Exec("USE auction_system")
-	if err != nil {
-		fmt.Println(err.Error())
-	} else {
-		fmt.Println("DB selected successfully..")
-	}
-
-	stmt, err := db.Prepare("CREATE Table user_table( AccountID int UNSIGNED NOT NULL UNIQUE PRIMARY KEY, first_name varchar(20) NOT NULL, last_name varchar(20) NOT NULL )")
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-	_, err = stmt.Exec()
-	if err != nil {
-		fmt.Println(err.Error())
-	} else {
-		fmt.Println("User Table created successfully..")
-	}
-
-	stmt2, err := db.Prepare("CREATE Table bid_table( biddingID int UNSIGNED NOT NULL UNIQUE PRIMARY KEY, bidderID int UNSIGNED NOT NULL UNIQUE, bidderUsername varchar(30) NOT NULL, bidPrice int UNSIGNED NOT NULL, bidTime varchar(30) NOT NULL,FOREIGN KEY (bidderID) REFERENCES user_table(AccountID) );")
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-	_, err = stmt2.Exec()
-	if err != nil {
-		fmt.Println(err.Error())
-	} else {
-		fmt.Println("Bid Table created successfully..")
-	}
-
-	stmt3, err := db.Prepare("CREATE Table auction_table( AuctionID int UNSIGNED NOT NULL UNIQUE PRIMARY KEY,AuctioneerID int UNSIGNED NOT NULL,ItemName varchar(30) NOT NULL, CurrWinnerID int UNSIGNED NOT NULL, CurrWinnerName varchar(30), CurrMaxBid int UNSIGNED NOT NULL, BidStep int UNSIGNED NOT NULL, LatestBidTime varchar(30) NOT NULL, StartTime varchar(30) NOT NULL, EndTime varchar(30) NOT NULL, FOREIGN KEY (AuctioneerID) references user_table(AccountID), FOREIGN KEY (CurrWinnerID) references user_table(AccountID))")
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-	_, err = stmt3.Exec()
-	if err != nil {
-		fmt.Println(err.Error())
-	} else {
-		fmt.Println("Auction Table created successfully..")
-	}
-
-	defer db.Close()
-}
-
-// Server : db.mcmullin.org:3306
-// username : auction
-// password : Helloworld1
+require github.com/go-sql-driver/mysql v1.5.0
+*/
