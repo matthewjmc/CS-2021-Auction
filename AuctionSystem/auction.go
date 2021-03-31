@@ -18,7 +18,6 @@ type Auction struct {
 	LatestBidTime  string
 	StartTime      string
 	EndTime        string
-	ActionCount    uint64
 }
 
 type AuctionHashTable struct {
@@ -182,7 +181,6 @@ func CreateAuction(auctioneer User, initBid uint64, bidStep uint64, id uint64, d
 		LatestBidTime:  time.Now().Format(time.RFC3339Nano),
 		StartTime:      time.Now().Format(time.RFC3339Nano),
 		EndTime:        time.Now().Add(duration * time.Hour).Format(time.RFC3339Nano),
-		ActionCount:    0,
 	}
 	result := AuctionReport{
 		CreatedAuction: &auction,

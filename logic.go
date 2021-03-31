@@ -1,15 +1,17 @@
-package AuctionSystem
+package main
 
 import (
 	. "CS-2021-Auction/AuctionSystem"
+	"database/sql"
 	"fmt"
 	"sync"
 	"time"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
 // AuctionLogic is a file composed of Tagun's and Katisak's code altogether.
 // The file is also being separated into 3 files which are auction_method, auction_timeline, data_structure.
-
 /*
 func main() {
 	//multipleUserTest()
@@ -17,8 +19,10 @@ func main() {
 	A := AuctionAllocate()
 	U := UserAllocate()
 	// modification of memory allocation to be dynamically allocating.
-	mainTimeline(A, U)
-}*/
+	// mainTimeline(A, U, )
+}
+*/
+
 type Data struct {
 	command      string
 	uid          uint64
@@ -128,4 +132,120 @@ func CreateAuctionMain(U *UserHashTable, A *AuctionHashTable, uid uint64, aid ui
 	}
 }
 
-// createAuction() and createAuctionMain(0) have been modified to also retrieve two more parameters which are the ongoing duration in hours and the itemname as a string.
+func _insertAuctionToDB(auction Auction) bool {
+
+	db, err := sql.Open("mysql", "username:password@tcp(127.0.0.1:3306)/database_name")
+
+	if err != nil {
+		panic(err.Error())
+	}
+	// error handler whether what causes the error regarding the connection to the database.
+	defer db.Close()
+	// perform a db.Query CRUD commands inputted.
+	insert, err := db.Query("INSERT INTO auction_table VALUES ( 2, 'T' )")
+	if err != nil {
+		panic(err.Error())
+	}
+	defer insert.Close()
+	// error handler whether what causes the error regarding the connection to the database.
+	return true
+}
+
+func _insertUserToDB(user User) bool {
+
+	db, err := sql.Open("mysql", "username:password@tcp(127.0.0.1:3306)/database_name")
+
+	if err != nil {
+		panic(err.Error())
+	}
+	// error handler whether what causes the error regarding the connection to the database.
+	defer db.Close()
+	// perform a db.Query CRUD commands inputted.
+	insert, err := db.Query("INSERT INTO user_table VALUES ( 2, 'T' )")
+	if err != nil {
+		panic(err.Error())
+	}
+	defer insert.Close()
+	// error handler whether what causes the error regarding the connection to the database.
+	return true
+}
+
+func _insertBidToDB(bid Bid) bool {
+
+	db, err := sql.Open("mysql", "username:password@tcp(127.0.0.1:3306)/database_name")
+
+	if err != nil {
+		panic(err.Error())
+	}
+	// error handler whether what causes the error regarding the connection to the database.
+	defer db.Close()
+	// perform a db.Query CRUD commands inputted.
+	insert, err := db.Query("INSERT INTO bidding_table VALUES ( 2, 'T' )")
+	if err != nil {
+		panic(err.Error())
+	}
+	defer insert.Close()
+	// error handler whether what causes the error regarding the connection to the database.
+	return true
+}
+
+func main() {
+
+	db, err := sql.Open("mysql", "auction:Helloworld1@tcp(db.mcmullin.org)/")
+	if err != nil {
+		fmt.Println(err.Error())
+	} else {
+		fmt.Println("Database created successfully")
+	}
+	_, err = db.Exec("CREATE DATABASE auction_system")
+	if err != nil {
+		fmt.Println(err.Error())
+	} else {
+		fmt.Println("Successfully created database..")
+	}
+	_, err = db.Exec("USE auction_system")
+	if err != nil {
+		fmt.Println(err.Error())
+	} else {
+		fmt.Println("DB selected successfully..")
+	}
+
+	stmt, err := db.Prepare("CREATE Table user_table(AccountID int UNSIGNED NOT NULL UNIQUE PRIMARY KEY, first_name varchar(20) NOT NULL, last_name varchar(20) NOT NULL) );")
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	_, err = stmt.Exec()
+	if err != nil {
+		fmt.Println(err.Error())
+	} else {
+		fmt.Println("User Table created successfully..")
+	}
+
+	stmt2, err := db.Prepare("CREATE Table bid_table(biddingID int UNSIGNED NOT NULL UNIQUE PRIMARY KEY, bidderID int UNSIGNED NOT NULL UNIQUE, bidderUsername varchar(30) NOT NULL, bidPrice int UNSIGNED NOT NULL, bidTime varchar(30) NOT NULL) FOREIGN KEY (bidderID) reference user_table(AccountID) );")
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	_, err = stmt2.Exec()
+	if err != nil {
+		fmt.Println(err.Error())
+	} else {
+		fmt.Println("Bid Table created successfully..")
+	}
+
+	stmt3, err := db.Prepare("CREATE Table auction_table(AuctionID int UNSIGNED NOT NULL UNIQUE PRIMARY KEY, AuctioneerID int UNSIGNED NOT NULL, ItemName varchar(30) NOT NULL, CurrWinnerID int UNSIGNED NOT NULL,CurrWinnerName varchar(30),CurrMaxBid int UNSIGNED NOT NULL,BidStep int UNSIGNED NOT NULL,LatestBidTime varchar(30) NOT NULL, StartTime varchar(30) NOT NULL, EndTime varchar(30) NOT NULL, FOREIGN KEY (AuctioneerID) reference user_table(AccountID) FOREIGN KEY (CurrWinnerID) reference user_table(AccountID) );")
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	_, err = stmt3.Exec()
+	if err != nil {
+		fmt.Println(err.Error())
+	} else {
+		fmt.Println("Table created successfully..")
+	}
+
+	defer db.Close()
+}
+
+// Server : db.mcmullin.org:3306
+// username : auction
+// password : Helloworld1

@@ -10,9 +10,9 @@ const ArraySize = 1000
 
 // User contains a user's information for every other implementation.
 type User struct {
+	AccountID uint64
 	Username  string
 	Fullname  string
-	AccountID uint64
 }
 
 type UserHashTable struct {
@@ -39,14 +39,15 @@ func (h *UserHashTable) InsertUserToHash(user User) {
 }
 
 // Continuation of hash function insertion to place it within a linked list as a node.
-func (b *UserLinkedList) insertUserToLinkedList(User User) {
+func (b *UserLinkedList) insertUserToLinkedList(User User) bool {
 	if !b.searchUserIDLinkedList(User.AccountID) {
 		newNode := &UserNode{Key: User}
 		newNode.Next = b.Head
 		b.Head = newNode
 		//fmt.Println(k)
+		return true
 	} else {
-		//fmt.Println(k, "already exists")
+		return false
 	}
 }
 
