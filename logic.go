@@ -210,7 +210,7 @@ func main() {
 		fmt.Println("DB selected successfully..")
 	}
 
-	stmt, err := db.Prepare("CREATE Table user_table(AccountID int UNSIGNED NOT NULL UNIQUE PRIMARY KEY, first_name varchar(20) NOT NULL, last_name varchar(20) NOT NULL) );")
+	stmt, err := db.Prepare("CREATE Table user_table( AccountID int UNSIGNED NOT NULL UNIQUE PRIMARY KEY, first_name varchar(20) NOT NULL, last_name varchar(20) NOT NULL )")
 	if err != nil {
 		fmt.Println(err.Error())
 	}
@@ -221,7 +221,7 @@ func main() {
 		fmt.Println("User Table created successfully..")
 	}
 
-	stmt2, err := db.Prepare("CREATE Table bid_table(biddingID int UNSIGNED NOT NULL UNIQUE PRIMARY KEY, bidderID int UNSIGNED NOT NULL UNIQUE, bidderUsername varchar(30) NOT NULL, bidPrice int UNSIGNED NOT NULL, bidTime varchar(30) NOT NULL) FOREIGN KEY (bidderID) reference user_table(AccountID) );")
+	stmt2, err := db.Prepare("CREATE Table bid_table( biddingID int UNSIGNED NOT NULL UNIQUE PRIMARY KEY, bidderID int UNSIGNED NOT NULL UNIQUE, bidderUsername varchar(30) NOT NULL, bidPrice int UNSIGNED NOT NULL, bidTime varchar(30) NOT NULL,FOREIGN KEY (bidderID) REFERENCES user_table(AccountID) );")
 	if err != nil {
 		fmt.Println(err.Error())
 	}
@@ -232,7 +232,7 @@ func main() {
 		fmt.Println("Bid Table created successfully..")
 	}
 
-	stmt3, err := db.Prepare("CREATE Table auction_table(AuctionID int UNSIGNED NOT NULL UNIQUE PRIMARY KEY, AuctioneerID int UNSIGNED NOT NULL, ItemName varchar(30) NOT NULL, CurrWinnerID int UNSIGNED NOT NULL,CurrWinnerName varchar(30),CurrMaxBid int UNSIGNED NOT NULL,BidStep int UNSIGNED NOT NULL,LatestBidTime varchar(30) NOT NULL, StartTime varchar(30) NOT NULL, EndTime varchar(30) NOT NULL, FOREIGN KEY (AuctioneerID) reference user_table(AccountID) FOREIGN KEY (CurrWinnerID) reference user_table(AccountID) );")
+	stmt3, err := db.Prepare("CREATE Table auction_table( AuctionID int UNSIGNED NOT NULL UNIQUE PRIMARY KEY,AuctioneerID int UNSIGNED NOT NULL,ItemName varchar(30) NOT NULL, CurrWinnerID int UNSIGNED NOT NULL, CurrWinnerName varchar(30), CurrMaxBid int UNSIGNED NOT NULL, BidStep int UNSIGNED NOT NULL, LatestBidTime varchar(30) NOT NULL, StartTime varchar(30) NOT NULL, EndTime varchar(30) NOT NULL, FOREIGN KEY (AuctioneerID) references user_table(AccountID), FOREIGN KEY (CurrWinnerID) references user_table(AccountID))")
 	if err != nil {
 		fmt.Println(err.Error())
 	}
@@ -240,7 +240,7 @@ func main() {
 	if err != nil {
 		fmt.Println(err.Error())
 	} else {
-		fmt.Println("Table created successfully..")
+		fmt.Println("Auction Table created successfully..")
 	}
 
 	defer db.Close()
