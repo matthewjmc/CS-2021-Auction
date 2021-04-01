@@ -38,7 +38,7 @@ func MakeBidMain(u *UserHashTable, h *AuctionHashTable, uid uint64, targetid uin
 		currUser := *u.AccessUserHash(uid)
 		newBid := CreateBid(currUser, placeVal, bidId, time.Now().Format(time.RFC3339Nano))
 		target := h.AccessHashAuction(targetid)
-		go InsertBidToDB(newBid, *target)
+		InsertBidToDB(newBid, *target)
 		if !target.UpdateAuctionWinner(newBid) {
 			return false, 3 // code 3 , the auction has not been updated due to the losing auction conditions.
 		} else {
