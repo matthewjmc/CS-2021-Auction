@@ -33,9 +33,9 @@ func HashUser(uid uint64) uint64 {
 }
 
 // A behavior of a hash table object used to insert a user into a hash function to properly placed it at the correct index.
-func (h *UserHashTable) InsertUserToHash(user User) {
+func (h *UserHashTable) InsertUserToHash(user User) bool {
 	index := HashUser(user.AccountID)
-	h.Array[index].insertUserToLinkedList(user)
+	return h.Array[index].insertUserToLinkedList(user)
 }
 
 // Continuation of hash function insertion to place it within a linked list as a node.

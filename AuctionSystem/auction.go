@@ -2,7 +2,6 @@ package AuctionSystem
 
 import (
 	"fmt"
-	"math/rand"
 	"time"
 )
 
@@ -163,10 +162,8 @@ func (b *AuctionLinkedList) searchAuctNameInLinkedList(k Auction) bool { //For c
 	return false
 }
 
-func CreateAuction(auctioneer User, initBid uint64, bidStep uint64, id uint64, duration time.Duration, itemName string) AuctionReport {
-
-	auction := Auction{}
-	auction = Auction{
+func CreateAuction(auctioneer User, initBid uint64, bidStep uint64, id uint64, duration time.Duration, itemName string) Auction {
+	auction := Auction{
 		AuctionID:      id,
 		AuctioneerID:   auctioneer.AccountID,
 		ItemName:       itemName,
@@ -178,38 +175,27 @@ func CreateAuction(auctioneer User, initBid uint64, bidStep uint64, id uint64, d
 		StartTime:      time.Now().Format(time.RFC3339Nano),
 		EndTime:        time.Now().Add(duration * time.Hour).Format(time.RFC3339Nano),
 	}
-	result := AuctionReport{
-		CreatedAuction: &auction,
-		CreatedID:      id,
-	}
-	return result
+	return auction
 }
 
 func (a *Auction) UpdateAuctionWinner(b Bid) bool {
-
 	if b.BidTime > a.EndTime {
 		return false
 	}
-
 	if (b.BidPrice > a.CurrMaxBid) && (b.BidPrice-a.CurrMaxBid) >= a.BidStep {
 		a.CurrMaxBid = b.BidPrice
 		a.CurrWinnerID = b.BidderID
 		a.LatestBidTime = b.BidTime
 		a.CurrWinnerName = b.BidderUsername
 	}
-
-	time.Sleep(1 * time.Millisecond)
-
 	return true
 }
 
 // Create bidding to be used to update the auction.
-func CreateBid(user User, price uint64, actionTime string) Bid {
-
-	id := rand.Uint64()
+func CreateBid(user User, price uint64, bidId uint64, actionTime string) Bid {
 	bid := Bid{}
 	bid = Bid{
-		BiddingID:      id,
+		BiddingID:      bidId,
 		BidderID:       user.AccountID,
 		BidderUsername: user.Username,
 		BidPrice:       price,

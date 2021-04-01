@@ -38,7 +38,7 @@ func DatabaseInit() {
 	if err != nil {
 		fmt.Println(err.Error())
 	}
-	stmt3, err := db.Prepare("CREATE Table bid_table( BiddingID int UNSIGNED NOT NULL UNIQUE PRIMARY KEY, BidderID int UNSIGNED NOT NULL UNIQUE, BidderUsername varchar(30) NOT NULL, BidPrice int UNSIGNED NOT NULL, BidTime varchar(50) NOT NULL , AuctionID int UNSIGNED NOT NULL UNIQUE , FOREIGN KEY (BidderID) REFERENCES user_table(AccountID), FOREIGN KEY (AuctionID) references auction_table(AuctionID) );")
+	stmt3, err := db.Prepare("CREATE Table bid_table( BiddingID int UNSIGNED NOT NULL UNIQUE PRIMARY KEY, BidderID int UNSIGNED NOT NULL, BidderUsername varchar(30) NOT NULL, BidPrice int UNSIGNED NOT NULL, BidTime varchar(50) NOT NULL , AuctionID int UNSIGNED NOT NULL, FOREIGN KEY (BidderID) REFERENCES user_table(AccountID), FOREIGN KEY (AuctionID) references auction_table(AuctionID) );")
 	if err != nil {
 		fmt.Println(err.Error())
 	}
@@ -55,11 +55,9 @@ func DatabaseInit() {
 // password : " first result usually used in programming world as an intro to everylanguage without spacing ,1"
 
 func InsertAuctionToDB(auction Auction) bool {
-
 	db, err := sql.Open("mysql", "auction:Helloworld1@tcp(db.mcmullin.org)/auction_system")
 	if err != nil {
 		panic(err.Error())
-		return false
 	}
 	defer db.Close()
 	query := "INSERT INTO auction_table(AuctionID,AuctioneerID,ItemName,CurrWinnerID,CurrWinnerName,CurrMaxBid,BidStep,LatestBidTime,StartTime,EndTime) VALUES ("
@@ -73,15 +71,12 @@ func InsertAuctionToDB(auction Auction) bool {
 	latestBidTime := "," + "\"" + auction.LatestBidTime + "\""
 	startTime := "," + "\"" + auction.StartTime + "\""
 	EndTime := "," + "\"" + auction.EndTime + "\""
-
 	exec := query + auctionId + auctioneerId + itemName + currWinnerID + currWinnerName + currMaxBid + bidStep + latestBidTime + startTime + EndTime + ")"
-	fmt.Println(exec)
 	insert, err := db.Query(exec)
 	if err != nil {
 		panic(err.Error())
 	}
 	defer insert.Close()
-
 	return true
 }
 
@@ -90,7 +85,6 @@ func UpdateAuctionInDB(auction Auction) bool {
 	db, err := sql.Open("mysql", "auction:Helloworld1@tcp(db.mcmullin.org)/auction_system")
 	if err != nil {
 		panic(err.Error())
-		return false
 	}
 	defer db.Close()
 
@@ -99,14 +93,8 @@ func UpdateAuctionInDB(auction Auction) bool {
 		panic(err.Error())
 	}
 
-	currWinnerID := strconv.FormatUint(auction.CurrWinnerID, 10)
-	currWinnerName := "," + "\"" + auction.CurrWinnerName + "\""
-	currMaxBid := "," + strconv.FormatUint(auction.CurrMaxBid, 10)
-	latestBidTime := "," + "\"" + auction.LatestBidTime + "\""
-	update.Exec(currMaxBid, currWinnerID, currWinnerID, currWinnerName, latestBidTime, auction.AuctionID)
-
+	update.Exec(auction.CurrMaxBid, auction.CurrWinnerID, auction.CurrWinnerName, auction.LatestBidTime, auction.AuctionID)
 	defer update.Close()
-
 	return true
 }
 
@@ -115,17 +103,15 @@ func InsertUserToDB(user User) bool {
 	db, err := sql.Open("mysql", "auction:Helloworld1@tcp(db.mcmullin.org)/auction_system")
 	if err != nil {
 		panic(err.Error())
-		return false
 	}
 	defer db.Close()
-	query := "INSERT INTO user_table(AccountID,Username,Fullname) VALUES ("
 
+	query := "INSERT INTO user_table(AccountID,Username,Fullname) VALUES ("
 	accountId := strconv.FormatUint(user.AccountID, 10)
 	username := "," + "\"" + user.Username + "\""
 	fullname := "," + "\"" + user.Fullname + "\""
 
 	exec := query + accountId + username + fullname + ")"
-	fmt.Println(exec)
 	insert, err := db.Query(exec)
 	if err != nil {
 		panic(err.Error())
@@ -140,7 +126,6 @@ func InsertBidToDB(bid Bid, target Auction) bool {
 	db, err := sql.Open("mysql", "auction:Helloworld1@tcp(db.mcmullin.org)/auction_system")
 	if err != nil {
 		panic(err.Error())
-		return false
 	}
 	defer db.Close()
 
@@ -152,14 +137,11 @@ func InsertBidToDB(bid Bid, target Auction) bool {
 	bidPrice := "," + strconv.FormatUint(bid.BidPrice, 10)
 	bidTime := "," + "\"" + bid.BidTime + "\""
 	AuctionId := "," + strconv.FormatUint(target.AuctionID, 10)
-
 	exec := query + bidId + bidderId + bidderName + bidPrice + bidTime + AuctionId + ")"
-	fmt.Println(exec)
 	insert, err := db.Query(exec)
 	if err != nil {
 		panic(err.Error())
 	}
 	defer insert.Close()
-
 	return true
 }
