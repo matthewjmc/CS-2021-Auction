@@ -1,4 +1,4 @@
-package main
+package load_balance
 
 import (
 	"io"
@@ -6,53 +6,31 @@ import (
 	"net"
 )
 
-func main() {
-	front := "19530"
-	back := "iot2.mccullin.org"
-
-	In, err := net.Listen("tcp", front)
-	if err != nil {
-		log.Fatalf("failed to setup listener: %v", err)
-	}
-
-	log.Println("listening on %", front)
-	log.Println("//////////////////LISTENING//////////////////")
-
-	for {
-		Inconn, err := In.Accept()
-		go ReProx(Inconn, back)
-		if err != nil {
-			log.Printf("failed to accept: %s", err)
-			continue
-		}
-
-	}
-}
-func copy(src net.Conn, dst net.Conn, stop chan bool) {
+func copy(src net.Conn, dst net.Conn) {
 	io.Copy(dst, src)
 	dst.Close()
 	src.Close()
-	stop <- true
+	//stop <- true
 	return
 }
 
 func ReProx(src net.Conn, server string) {
 
-	dst, err := net.Dial("tcp", server)
+	dst, err := net.Dial("tcp4", server)
 	if err != nil {
 		src.Close()
 		log.Printf("failed to dial %s: %s", server, err)
 		return
 	}
 
-	stop := make(chan bool)
+	//stop := make(chan bool)
 
-	go copy(dst, src, stop)
-	go copy(src, dst, stop)
+	go copy(dst, src)
+	go copy(src, dst)
 
-	select {
-	case <-stop:
-		return
-	}
+	// select {
+	// case <-stop:
+	//         return
+	// }
 
 }
