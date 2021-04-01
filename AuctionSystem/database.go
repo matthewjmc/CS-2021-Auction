@@ -9,7 +9,8 @@ import (
 )
 
 func DatabaseInit() {
-	db, debug := sql.Open("mysql", "username:password@tcp(db_server)/") // for initialization
+
+	db, debug := sql.Open("mysql", "auction:Helloworld1@tcp(db.mcmullin.org)/")
 	if debug != nil {
 		fmt.Println(debug.Error())
 	}
@@ -49,8 +50,12 @@ func DatabaseInit() {
 	defer db.Close()
 }
 
+// Server : db.mcmullin.org:3306
+// username : auction
+// password : " first result usually used in programming world as an intro to everylanguage without spacing ,1"
+
 func InsertAuctionToDB(auction Auction) bool {
-	db, err := sql.Open("mysql", "username:password@tcp(db_server)/db_name")
+	db, err := sql.Open("mysql", "auction:Helloworld1@tcp(db.mcmullin.org)/auction_system")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -77,7 +82,7 @@ func InsertAuctionToDB(auction Auction) bool {
 
 func UpdateAuctionInDB(auction Auction) bool {
 
-	db, err := sql.Open("mysql", "username:password@tcp(db_server)/db_name")
+	db, err := sql.Open("mysql", "auction:Helloworld1@tcp(db.mcmullin.org)/auction_system")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -95,7 +100,7 @@ func UpdateAuctionInDB(auction Auction) bool {
 
 func InsertUserToDB(user User) bool {
 
-	db, err := sql.Open("mysql", "username:password@tcp(db_server)/db_name")
+	db, err := sql.Open("mysql", "auction:Helloworld1@tcp(db.mcmullin.org)/auction_system")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -118,7 +123,7 @@ func InsertUserToDB(user User) bool {
 
 func InsertBidToDB(bid Bid, target Auction) bool {
 
-	db, err := sql.Open("mysql", "username:password@tcp(db_server)/db_name")
+	db, err := sql.Open("mysql", "auction:Helloworld1@tcp(db.mcmullin.org)/auction_system")
 	if err != nil {
 		panic(err.Error())
 	}

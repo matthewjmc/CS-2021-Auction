@@ -11,6 +11,16 @@ import (
 
 func main() {
 	DatabaseInit()
+	a := AuctionAllocate()
+	u := UserAllocate()
+	CreateUserMain(u, 9921, "tagun")
+	CreateUserMain(u, 1338, "matthew")
+	CreateUserMain(u, 7777, "katisak")
+	CreateAuctionMain(u, a, 9921, 111111, 100, 100, 1, "verygooditem1")
+	MakeBidMain(u, a, 7777, 111111, 120, 1)
+	MakeBidMain(u, a, 1338, 111111, 400, 2)
+	MakeBidMain(u, a, 7777, 111111, 1000, 3)
+	MakeBidMain(u, a, 9921, 222222, 1000, 4)
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -28,7 +38,7 @@ func MakeBidMain(u *UserHashTable, h *AuctionHashTable, uid uint64, targetid uin
 		currUser := *u.AccessUserHash(uid)
 		newBid := CreateBid(currUser, placeVal, bidId, time.Now().Format(time.RFC3339Nano))
 		target := h.AccessHashAuction(targetid)
-		InsertBidToDB(newBid, *target)
+		go InsertBidToDB(newBid, *target)
 		if !target.UpdateAuctionWinner(newBid) {
 			return false, 3 // code 3 , the auction has not been updated due to the losing auction conditions.
 		} else {
@@ -96,7 +106,6 @@ func test_database_conn() {
 }
 
 func test_database_transaction() {
-	DatabaseInit()
 	a := AuctionAllocate()
 	u := UserAllocate()
 	CreateUserMain(u, 9921, "tagun")   // db checked!
