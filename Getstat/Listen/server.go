@@ -19,21 +19,14 @@ var S1_Usage, S2_Usage string
 // every period of time set
 func main() {
 	//var wg sync.WaitGroup
-	conn, err := net.Listen("tcp4", ":19530")
+	conn, err := net.Dial("tcp4", ":19530")
 	if err != nil {
 		fmt.Println(err)
 	}
-	for {
-		c, err := conn.Accept()
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
 
-		//wg.Add(1)
-		go getStat(c)
-		//wg.Wait()
-	}
+	//wg.Add(1)
+	go getStat(conn)
+	//wg.Wait()
 
 }
 

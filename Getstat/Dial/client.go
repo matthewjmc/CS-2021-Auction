@@ -12,20 +12,24 @@ import (
 	"unicode"
 )
 
-// locate on the s1 and s2 (backend side)
+// locate on S1 and S2 to get CPUusage that is free in percentage to compare
 func main() {
 	for {
-		conn, err := net.Dial("tcp4", "load.mcmullin.org:19530")
+		ln, err := net.Listen("tcp4", ":19530")
 		if err != nil {
 			fmt.Println(err)
 		}
-		defer conn.Close()
+		//defer conn.Close()
 		for {
+			conn, err := ln.Accept()
+			if err != nil {
+				fmt.Println(err)
+			}
 			data := Usage()
 			// reader := bufio.NewReader(data)
 			// fmt.Print(">> ")
 			// text, _ := reader.ReadString('\n')
-			fmt.Fprintf(conn, "FROM S2:"+data+"\n")
+			fmt.Fprintf(conn, "From server two:"+data+"\n")
 
 			message, _ := bufio.NewReader(conn).ReadString('\n')
 			fmt.Print("->: " + message)
@@ -36,7 +40,6 @@ func main() {
 			time.Sleep(5 * time.Second)
 		}
 	}
-
 }
 
 func Usage() (data string) {

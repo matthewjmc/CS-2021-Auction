@@ -1,11 +1,14 @@
-package main
+package CS-2021-Auction
 
 import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net"
 	"reflect"
 	"strconv"
+
+	gs "CS-2021-Auction/getstat"
 
 	"github.com/go-redis/redis"
 )
@@ -14,25 +17,21 @@ type Client struct {
 	Command string
 }
 
-type Address struct {
-	addr string
-}
-
 type Auction struct {
 	Description      string
 	AddressIP        string
 	ConnectedClients int
 }
 
-func main() {
-	//updateConnectedUsers("1")
-	// key1 := "10"
-	// value1 := &Auction{Description: "someName1", AddressIP: "addr.1.23456781", ConnectedClients: +1}
-	// SetKey("1", value1)
-	//val := Client{Command: "create", Description: "asdd"}
-	//keygen(Client{Command: "create", Description: "asdd"})
-	//deleteAuction(Client{Command: "stop", Description: "asdd"}, "1")
-}
+// func main() {
+// 	updateConnectedUsers("1")
+// 	key1 := "10"
+// 	value1 := &Auction{Description: "someName1", AddressIP: "addr.1.23456781", ConnectedClients: +1}
+// 	SetKey("1", value1)
+// 	val := Client{Command: "create", Description: "asdd"}
+// 	keygen(Client{Command: "create", Description: "asdd"})
+// 	deleteAuction(Client{Command: "stop", Description: "asdd"}, "1")
+// }
 
 // set auctionID or key to auction struct input
 func SetKey(key string, value interface{}) (key1 string) {
@@ -52,9 +51,9 @@ func SetKey(key string, value interface{}) (key1 string) {
 	return key
 }
 
-// return to matthew client
-func keygen(c Client) (key string) {
-	if c.Command != "create" {
+// return new key to matthew's side (client) and lock the ip addr for that key
+func KeyGen(cli Client) (key string) {
+	if cli.Command != "create" {
 		fmt.Println("not create command")
 	}
 	client := redis.NewClient(&redis.Options{
@@ -66,43 +65,72 @@ func keygen(c Client) (key string) {
 	if err != nil {
 		fmt.Println(err)
 	}
-	fmt.Println(temp)
+	//fmt.Println(temp)
 	var count = len(temp)
 	fmt.Println(count)
 	var newkey = count + 1
 	key1 := strconv.Itoa(newkey)
 	fmt.Println(key1, reflect.TypeOf(key1))
+
+	//get CPU stat
+	// ln, err := net.Listen("tcp4", ":19530")
+	// 		if err != nil {
+	// 				fmt.Println(err)
+	// 		}
+	// 	fmt.Println("in1")
+	// for{
+	// 	conn, err := ln.Accept()
+	// 	fmt.Println("in2")
+	// 	if err != nil {
+	// 			fmt.Println(err)
+	// 			return
+	// 	}
+	// 	fmt.Println("in3")
+	// 	gs.GetStat(conn)
+	// 	fmt.Println("in4")
+	// 	}
+
+	ln1, err := net.Dial("tcp4", "com1.mcmullin.org:19530")
+	ln2, err := net.Dial("tcp4", "com2.mcmullin.org:19530")
+	if err != nil {
+		fmt.Println(err)
+	}
+	gs.GetStat(ln1)
+	gs.GetStat(ln2)
+	fmt.Println(gs.S1_Usage)
+	fmt.Println(gs.S2_Usage)
+
 	//set IP address to that key
-	if S1_Usage > S2_Usage {
-		src := Auction{}
-		err = json.Unmarshal([]byte(val), &src)
-		var newval = Auction{
-			Description:      src.Description,
-			AddressIP:        Address[1],
-			ConnectedClients: src.ConnectedClients,
+	if gs.S1_Usage > gs.S2_Usage {
+		value := &Auction{Description: "", AddressIP: "com1.mcmullin.org", ConnectedClients: 0}
+		entry, err := json.Marshal(value)
+		if err != nil {
+			fmt.Println(err)
 		}
-		entry, err := json.Marshal(newval)
-		client.Set(id, entry, 0)
-	} else if S2_Usage > S1_Usage {
-		src := Auction{}
-		err = json.Unmarshal([]byte(val), &src)
-		var newval = Auction{
-			Description:      src.Description,
-			AddressIP:        "com1.mcmullin.org",
-			ConnectedClients: src.ConnectedClients,
+		err = client.Set(key1, entry, 0).Err()
+		if err != nil {
+			fmt.Println(err)
 		}
-		entry, err := json.Marshal(newval)
-		client.Set(id, entry, 0)
+	} else if gs.S2_Usage > gs.S1_Usage {
+		value := &Auction{Description: "", AddressIP: "com2.mcmullin.org", ConnectedClients: 0}
+		entry, err := json.Marshal(value)
+		if err != nil {
+			fmt.Println(err)
+		}
+		err = client.Set(key1, entry, 0).Err()
+		if err != nil {
+			fmt.Println(err)
+		}
 	} else {
-		src := Auction{}
-		err = json.Unmarshal([]byte(val), &src)
-		var newval = Auction{
-			Description:      src.Description,
-			AddressIP:        "com2.mcmullin.org",
-			ConnectedClients: src.ConnectedClients,
+		value := &Auction{Description: "", AddressIP: "com1.mcmullin.org", ConnectedClients: 0}
+		entry, err := json.Marshal(value)
+		if err != nil {
+			fmt.Println(err)
 		}
-		entry, err := json.Marshal(newval)
-		client.Set(id, entry, 0)
+		err = client.Set(key1, entry, 0).Err()
+		if err != nil {
+			fmt.Println(err)
+		}
 	}
 	return key1
 }
@@ -147,6 +175,7 @@ func GetDescriptionByID(key string) (ip string) {
 	return src.Description
 }
 
+// update numbers of connected users
 func updateConnectedUsers(id string) (user int) {
 	client := redis.NewClient(&redis.Options{
 		Addr:     "localhost: 6379",
@@ -192,7 +221,7 @@ func deleteAuction(c Client, key string) bool {
 		Password: "",
 		DB:       0,
 	})
-	if c.Command == "stop" {
+	if c.Command == "delete" {
 		val, err := client.Del(key).Result()
 		if err != nil {
 			fmt.Println(err)
