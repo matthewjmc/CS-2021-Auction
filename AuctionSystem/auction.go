@@ -47,7 +47,7 @@ func HashAuction(targetID uint64) uint64 {
 func (h *AuctionHashTable) InsertAuctToHash(auction *Auction) {
 	index := HashAuction(auction.AuctionID)
 	h.array[index].insertAuctToLinkedList(*auction)
-	fmt.Println("Added Success")
+	// fmt.Println("Added Success")
 }
 
 // Continuation of hash function insertion to place it within a linked list as a node.
@@ -56,9 +56,7 @@ func (b *AuctionLinkedList) insertAuctToLinkedList(auction Auction) {
 		newNode := &AuctionNode{key: auction}
 		newNode.next = b.head
 		b.head = newNode
-		fmt.Println("The auction has been inserted properly.")
-	} else {
-		fmt.Println("The created auction already exists")
+		//fmt.Println("The auction has been inserted properly.")
 	}
 }
 
@@ -101,8 +99,8 @@ func (b *AuctionLinkedList) updateAuctionInLinkedList(k Auction) { //update auct
 	for currentNode != nil {
 		if currentNode.key.AuctionID == temp {
 			currentNode.key = k
-			fmt.Println(currentNode.key)
-			fmt.Println("updateAuction completed")
+			// fmt.Println(currentNode.key)
+			// fmt.Println("updateAuction completed")
 			return
 		}
 		currentNode = currentNode.next
@@ -118,7 +116,7 @@ func (b *AuctionLinkedList) accessLinkedListAuction(auctionID uint64) *Auction {
 	currentNode := b.head
 	for currentNode != nil {
 		if currentNode.key.AuctionID == auctionID {
-			fmt.Println("The auction is being accessed")
+			//fmt.Println("The auction is being accessed")
 			return &currentNode.key
 		}
 		currentNode = currentNode.next
