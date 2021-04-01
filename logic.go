@@ -11,16 +11,6 @@ import (
 
 func main() {
 	DatabaseInit()
-	a := AuctionAllocate()
-	u := UserAllocate()
-	CreateUserMain(u, 9921, "tagun")   // db checked!
-	CreateUserMain(u, 1338, "matthew") // db checked!
-	CreateUserMain(u, 7777, "katisak") // db checked!
-	CreateAuctionMain(u, a, 9921, 111111, 100, 100, 1, "verygooditem1")
-	MakeBidMain(u, a, 7777, 111111, 120, 1)
-	MakeBidMain(u, a, 1338, 111111, 400, 2)
-	MakeBidMain(u, a, 7777, 111111, 1000, 3)
-	MakeBidMain(u, a, 9921, 222222, 1000, 4)
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -37,12 +27,15 @@ func MakeBidMain(u *UserHashTable, h *AuctionHashTable, uid uint64, targetid uin
 	} else {
 		currUser := *u.AccessUserHash(uid)
 		newBid := CreateBid(currUser, placeVal, bidId, time.Now().Format(time.RFC3339Nano))
-		target := h.AccessHashAuction(targetid) // checked!
+		target := h.AccessHashAuction(targetid)
 		InsertBidToDB(newBid, *target)
-		target.UpdateAuctionWinner(newBid) // checked!
-		h.AuctionHashAccessUpdate(*target) // checked!
-		UpdateAuctionInDB(*target)
-		return true, 0
+		if !target.UpdateAuctionWinner(newBid) {
+			return false, 3 // code 3 , the auction has not been updated due to the losing auction conditions.
+		} else {
+			h.AuctionHashAccessUpdate(*target)
+			UpdateAuctionInDB(*target)
+			return true, 0
+		}
 	}
 }
 
@@ -72,17 +65,6 @@ func CreateAuctionMain(U *UserHashTable, A *AuctionHashTable, uid uint64, aid ui
 // Testing functions.
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-type Data struct {
-	command      string
-	uid          uint64
-	fullname     string
-	aid          uint64
-	itemname     string
-	biddingValue uint64
-	biddingStep  uint64
-	duration     time.Duration
-}
-
 func test_database_conn() {
 	user := User{
 		AccountID: 1,
@@ -111,4 +93,18 @@ func test_database_conn() {
 	InsertUserToDB(user)
 	InsertAuctionToDB(auction)
 	InsertBidToDB(bid, auction)
+}
+
+func test_database_transaction() {
+	DatabaseInit()
+	a := AuctionAllocate()
+	u := UserAllocate()
+	CreateUserMain(u, 9921, "tagun")   // db checked!
+	CreateUserMain(u, 1338, "matthew") // db checked!
+	CreateUserMain(u, 7777, "katisak") // db checked!
+	CreateAuctionMain(u, a, 9921, 111111, 100, 100, 1, "verygooditem1")
+	MakeBidMain(u, a, 7777, 111111, 120, 1)
+	MakeBidMain(u, a, 1338, 111111, 400, 2)
+	MakeBidMain(u, a, 7777, 111111, 1000, 3)
+	MakeBidMain(u, a, 9921, 222222, 1000, 4)
 }

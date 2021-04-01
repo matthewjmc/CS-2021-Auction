@@ -1,7 +1,6 @@
 package AuctionSystem
 
 import (
-	"fmt"
 	"time"
 )
 
@@ -113,7 +112,6 @@ func (b *AuctionLinkedList) accessLinkedListAuction(auctionID uint64) *Auction {
 	currentNode := b.head
 	for currentNode != nil {
 		if currentNode.key.AuctionID == auctionID {
-			fmt.Println("The auction is being accessed")
 			return &currentNode.key
 		}
 		currentNode = currentNode.next

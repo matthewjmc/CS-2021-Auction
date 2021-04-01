@@ -9,53 +9,48 @@ import (
 )
 
 func DatabaseInit() {
-
-	db, err := sql.Open("mysql", "auction:Helloworld1@tcp(db.mcmullin.org)/")
-	if err != nil {
-		fmt.Println(err.Error())
+	db, debug := sql.Open("mysql", "username:password@tcp(db_server)/") // for initialization
+	if debug != nil {
+		fmt.Println(debug.Error())
 	}
-	_, err = db.Exec("CREATE DATABASE auction_system")
-	if err != nil {
-		fmt.Println(err.Error())
+	_, debug = db.Exec("CREATE DATABASE auction_system")
+	if debug != nil {
+		fmt.Println(debug.Error())
 	}
-	_, err = db.Exec("USE auction_system")
-	if err != nil {
-		fmt.Println(err.Error())
+	_, debug = db.Exec("USE auction_system")
+	if debug != nil {
+		fmt.Println(debug.Error())
 	}
-	stmt, err := db.Prepare("CREATE Table user_table( AccountID int UNSIGNED NOT NULL UNIQUE PRIMARY KEY, Username varchar(20) NOT NULL, Fullname varchar(20) NOT NULL )")
-	if err != nil {
-		fmt.Println(err.Error())
+	statement, debug := db.Prepare("CREATE Table user_table( AccountID int UNSIGNED NOT NULL UNIQUE PRIMARY KEY, Username varchar(20) NOT NULL, Fullname varchar(20) NOT NULL )")
+	if debug != nil {
+		fmt.Println(debug.Error())
 	}
-	_, err = stmt.Exec()
-	if err != nil {
-		fmt.Println(err.Error())
+	_, debug = statement.Exec()
+	if debug != nil {
+		fmt.Println(debug.Error())
 	}
-	stmt2, err := db.Prepare("CREATE Table auction_table( AuctionID int UNSIGNED NOT NULL UNIQUE PRIMARY KEY,AuctioneerID int UNSIGNED NOT NULL,ItemName varchar(30) NOT NULL, CurrWinnerID int UNSIGNED NOT NULL, CurrWinnerName varchar(30), CurrMaxBid int UNSIGNED NOT NULL, BidStep int UNSIGNED NOT NULL, LatestBidTime varchar(50) NOT NULL, StartTime varchar(50) NOT NULL, EndTime varchar(50) NOT NULL, FOREIGN KEY (AuctioneerID) references user_table(AccountID), FOREIGN KEY (CurrWinnerID) references user_table(AccountID))")
-	if err != nil {
-		fmt.Println(err.Error())
+	statement2, debug := db.Prepare("CREATE Table auction_table( AuctionID int UNSIGNED NOT NULL UNIQUE PRIMARY KEY,AuctioneerID int UNSIGNED NOT NULL,ItemName varchar(30) NOT NULL, CurrWinnerID int UNSIGNED NOT NULL, CurrWinnerName varchar(30), CurrMaxBid int UNSIGNED NOT NULL, BidStep int UNSIGNED NOT NULL, LatestBidTime varchar(50) NOT NULL, StartTime varchar(50) NOT NULL, EndTime varchar(50) NOT NULL, FOREIGN KEY (AuctioneerID) references user_table(AccountID), FOREIGN KEY (CurrWinnerID) references user_table(AccountID))")
+	if debug != nil {
+		fmt.Println(debug.Error())
 	}
-	_, err = stmt2.Exec()
-	if err != nil {
-		fmt.Println(err.Error())
+	_, debug = statement2.Exec()
+	if debug != nil {
+		fmt.Println(debug.Error())
 	}
-	stmt3, err := db.Prepare("CREATE Table bid_table( BiddingID int UNSIGNED NOT NULL UNIQUE PRIMARY KEY, BidderID int UNSIGNED NOT NULL, BidderUsername varchar(30) NOT NULL, BidPrice int UNSIGNED NOT NULL, BidTime varchar(50) NOT NULL , AuctionID int UNSIGNED NOT NULL, FOREIGN KEY (BidderID) REFERENCES user_table(AccountID), FOREIGN KEY (AuctionID) references auction_table(AuctionID) );")
-	if err != nil {
-		fmt.Println(err.Error())
+	statement3, debug := db.Prepare("CREATE Table bid_table( BiddingID int UNSIGNED NOT NULL UNIQUE PRIMARY KEY, BidderID int UNSIGNED NOT NULL, BidderUsername varchar(30) NOT NULL, BidPrice int UNSIGNED NOT NULL, BidTime varchar(50) NOT NULL , AuctionID int UNSIGNED NOT NULL, FOREIGN KEY (BidderID) REFERENCES user_table(AccountID), FOREIGN KEY (AuctionID) references auction_table(AuctionID) );")
+	if debug != nil {
+		fmt.Println(debug.Error())
 	}
-	_, err = stmt3.Exec()
-	if err != nil {
-		fmt.Println(err.Error())
+	_, debug = statement3.Exec()
+	if debug != nil {
+		fmt.Println(debug.Error())
 	}
 
 	defer db.Close()
 }
 
-// Server : db.mcmullin.org:3306
-// username : auction
-// password : " first result usually used in programming world as an intro to everylanguage without spacing ,1"
-
 func InsertAuctionToDB(auction Auction) bool {
-	db, err := sql.Open("mysql", "auction:Helloworld1@tcp(db.mcmullin.org)/auction_system")
+	db, err := sql.Open("mysql", "username:password@tcp(db_server)/db_name")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -82,7 +77,7 @@ func InsertAuctionToDB(auction Auction) bool {
 
 func UpdateAuctionInDB(auction Auction) bool {
 
-	db, err := sql.Open("mysql", "auction:Helloworld1@tcp(db.mcmullin.org)/auction_system")
+	db, err := sql.Open("mysql", "username:password@tcp(db_server)/db_name")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -100,7 +95,7 @@ func UpdateAuctionInDB(auction Auction) bool {
 
 func InsertUserToDB(user User) bool {
 
-	db, err := sql.Open("mysql", "auction:Helloworld1@tcp(db.mcmullin.org)/auction_system")
+	db, err := sql.Open("mysql", "username:password@tcp(db_server)/db_name")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -123,7 +118,7 @@ func InsertUserToDB(user User) bool {
 
 func InsertBidToDB(bid Bid, target Auction) bool {
 
-	db, err := sql.Open("mysql", "auction:Helloworld1@tcp(db.mcmullin.org)/auction_system")
+	db, err := sql.Open("mysql", "username:password@tcp(db_server)/db_name")
 	if err != nil {
 		panic(err.Error())
 	}
