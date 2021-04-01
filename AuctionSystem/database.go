@@ -22,7 +22,7 @@ func DatabaseInit() {
 	if err != nil {
 		fmt.Println(err.Error())
 	}
-	stmt, err := db.Prepare("CREATE Table user_table( AccountID int UNSIGNED NOT NULL UNIQUE PRIMARY KEY, first_name varchar(20) NOT NULL, last_name varchar(20) NOT NULL )")
+	stmt, err := db.Prepare("CREATE Table user_table( AccountID int UNSIGNED NOT NULL UNIQUE PRIMARY KEY, Username varchar(20) NOT NULL, Fullname varchar(20) NOT NULL )")
 	if err != nil {
 		fmt.Println(err.Error())
 	}
@@ -30,7 +30,7 @@ func DatabaseInit() {
 	if err != nil {
 		fmt.Println(err.Error())
 	}
-	stmt2, err := db.Prepare("CREATE Table bid_table( biddingID int UNSIGNED NOT NULL UNIQUE PRIMARY KEY, bidderID int UNSIGNED NOT NULL UNIQUE, bidderUsername varchar(30) NOT NULL, bidPrice int UNSIGNED NOT NULL, bidTime varchar(50) NOT NULL,FOREIGN KEY (bidderID) REFERENCES user_table(AccountID) );")
+	stmt2, err := db.Prepare("CREATE Table auction_table( AuctionID int UNSIGNED NOT NULL UNIQUE PRIMARY KEY,AuctioneerID int UNSIGNED NOT NULL,ItemName varchar(30) NOT NULL, CurrWinnerID int UNSIGNED NOT NULL, CurrWinnerName varchar(30), CurrMaxBid int UNSIGNED NOT NULL, BidStep int UNSIGNED NOT NULL, LatestBidTime varchar(50) NOT NULL, StartTime varchar(50) NOT NULL, EndTime varchar(50) NOT NULL, FOREIGN KEY (AuctioneerID) references user_table(AccountID), FOREIGN KEY (CurrWinnerID) references user_table(AccountID))")
 	if err != nil {
 		fmt.Println(err.Error())
 	}
@@ -38,7 +38,7 @@ func DatabaseInit() {
 	if err != nil {
 		fmt.Println(err.Error())
 	}
-	stmt3, err := db.Prepare("CREATE Table auction_table( AuctionID int UNSIGNED NOT NULL UNIQUE PRIMARY KEY,AuctioneerID int UNSIGNED NOT NULL,ItemName varchar(30) NOT NULL, CurrWinnerID int UNSIGNED NOT NULL, CurrWinnerName varchar(30), CurrMaxBid int UNSIGNED NOT NULL, BidStep int UNSIGNED NOT NULL, LatestBidTime varchar(50) NOT NULL, StartTime varchar(50) NOT NULL, EndTime varchar(50) NOT NULL, FOREIGN KEY (AuctioneerID) references user_table(AccountID), FOREIGN KEY (CurrWinnerID) references user_table(AccountID))")
+	stmt3, err := db.Prepare("CREATE Table bid_table( BiddingID int UNSIGNED NOT NULL UNIQUE PRIMARY KEY, BidderID int UNSIGNED NOT NULL UNIQUE, BidderUsername varchar(30) NOT NULL, BidPrice int UNSIGNED NOT NULL, BidTime varchar(50) NOT NULL , AuctionID int UNSIGNED NOT NULL UNIQUE , FOREIGN KEY (BidderID) REFERENCES user_table(AccountID), FOREIGN KEY (AuctionID) references auction_table(AuctionID) );")
 	if err != nil {
 		fmt.Println(err.Error())
 	}
@@ -46,6 +46,7 @@ func DatabaseInit() {
 	if err != nil {
 		fmt.Println(err.Error())
 	}
+
 	defer db.Close()
 }
 
@@ -64,16 +65,14 @@ func InsertAuctionToDB(auction Auction) bool {
 	query := "INSERT INTO auction_table(AuctionID,AuctioneerID,ItemName,CurrWinnerID,CurrWinnerName,CurrMaxBid,BidStep,LatestBidTime,StartTime,EndTime) VALUES ("
 	auctionId := strconv.FormatUint(auction.AuctionID, 10)
 	auctioneerId := "," + strconv.FormatUint(auction.AuctioneerID, 10)
-	itemName := "," + auction.ItemName
+	itemName := "," + "\"" + auction.ItemName + "\""
 	currWinnerID := "," + strconv.FormatUint(auction.CurrWinnerID, 10)
-	currWinnerName := "," + auction.CurrWinnerName
+	currWinnerName := "," + "\"" + auction.CurrWinnerName + "\""
 	currMaxBid := "," + strconv.FormatUint(auction.CurrMaxBid, 10)
 	bidStep := "," + strconv.FormatUint(auction.BidStep, 10)
-	latestBidTime := "," + fmt.Sprint(auction.LatestBidTime)
-	startTime := "," + auction.StartTime
-	EndTime := "," + auction.EndTime
-
-	fmt.Println(latestBidTime)
+	latestBidTime := "," + "\"" + auction.LatestBidTime + "\""
+	startTime := "," + "\"" + auction.StartTime + "\""
+	EndTime := "," + "\"" + auction.EndTime + "\""
 
 	exec := query + auctionId + auctioneerId + itemName + currWinnerID + currWinnerName + currMaxBid + bidStep + latestBidTime + startTime + EndTime + ")"
 	fmt.Println(exec)
@@ -86,40 +85,81 @@ func InsertAuctionToDB(auction Auction) bool {
 	return true
 }
 
-func InsertUserToDB(user User) bool {
+func UpdateAuctionInDB(auction Auction) bool {
 
-	db, err := sql.Open("mysql", "username:password@tcp(127.0.0.1:3306)/database_name")
-
+	db, err := sql.Open("mysql", "auction:Helloworld1@tcp(db.mcmullin.org)/auction_system")
 	if err != nil {
 		panic(err.Error())
+		return false
 	}
-	// error handler whether what causes the error regarding the connection to the database.
 	defer db.Close()
-	// perform a db.Query CRUD commands inputted.
-	insert, err := db.Query("INSERT INTO user_table VALUES ( 2, 'T' )")
+
+	update, err := db.Prepare("UPDATE auction_table SET CurrMaxBid = ? , CurrWinnerID = ? , CurrWinnerName = ? , LatestBidTime = ? WHERE AuctionID = ?")
 	if err != nil {
 		panic(err.Error())
 	}
-	defer insert.Close()
-	// error handler whether what causes the error regarding the connection to the database.
+
+	currWinnerID := strconv.FormatUint(auction.CurrWinnerID, 10)
+	currWinnerName := "," + "\"" + auction.CurrWinnerName + "\""
+	currMaxBid := "," + strconv.FormatUint(auction.CurrMaxBid, 10)
+	latestBidTime := "," + "\"" + auction.LatestBidTime + "\""
+	update.Exec(currMaxBid, currWinnerID, currWinnerID, currWinnerName, latestBidTime, auction.AuctionID)
+
+	defer update.Close()
+
 	return true
 }
 
-func InsertBidToDB(bid Bid) bool {
+func InsertUserToDB(user User) bool {
 
-	db, err := sql.Open("mysql", "username:password@tcp(127.0.0.1:3306)/database_name")
-
+	db, err := sql.Open("mysql", "auction:Helloworld1@tcp(db.mcmullin.org)/auction_system")
 	if err != nil {
 		panic(err.Error())
+		return false
 	}
-	// error handler whether what causes the error regarding the connection to the database.
 	defer db.Close()
-	// perform a db.Query CRUD commands inputted.
-	insert, err := db.Query("INSERT INTO bidding_table VALUES ( 2, 'T' )")
+	query := "INSERT INTO user_table(AccountID,Username,Fullname) VALUES ("
+
+	accountId := strconv.FormatUint(user.AccountID, 10)
+	username := "," + "\"" + user.Username + "\""
+	fullname := "," + "\"" + user.Fullname + "\""
+
+	exec := query + accountId + username + fullname + ")"
+	fmt.Println(exec)
+	insert, err := db.Query(exec)
 	if err != nil {
 		panic(err.Error())
 	}
 	defer insert.Close()
-	// error handler whether what causes the error regarding the connection to the database.
+
+	return true
+}
+
+func InsertBidToDB(bid Bid, target Auction) bool {
+
+	db, err := sql.Open("mysql", "auction:Helloworld1@tcp(db.mcmullin.org)/auction_system")
+	if err != nil {
+		panic(err.Error())
+		return false
+	}
+	defer db.Close()
+
+	query := "INSERT INTO bid_table(BiddingID,BidderID,BidderUsername,BidPrice,BidTime,AuctionID) VALUES ("
+
+	bidId := strconv.FormatUint(bid.BiddingID, 10)
+	bidderId := "," + strconv.FormatUint(bid.BidderID, 10)
+	bidderName := "," + "\"" + bid.BidderUsername + "\""
+	bidPrice := "," + strconv.FormatUint(bid.BidPrice, 10)
+	bidTime := "," + "\"" + bid.BidTime + "\""
+	AuctionId := "," + strconv.FormatUint(target.AuctionID, 10)
+
+	exec := query + bidId + bidderId + bidderName + bidPrice + bidTime + AuctionId + ")"
+	fmt.Println(exec)
+	insert, err := db.Query(exec)
+	if err != nil {
+		panic(err.Error())
+	}
+	defer insert.Close()
+
 	return true
 }

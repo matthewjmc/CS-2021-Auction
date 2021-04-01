@@ -14,19 +14,33 @@ import (
 
 func main() {
 	DatabaseInit()
+	user := User{
+		AccountID: 1,
+		Username:  "testUsername",
+		Fullname:  "testFullname",
+	}
 	auction := Auction{
-		AuctionID:      1,
+		AuctionID:      111111,
 		AuctioneerID:   1,
 		ItemName:       "test",
 		CurrWinnerID:   1,
 		CurrWinnerName: "test2",
 		CurrMaxBid:     100,
-		BidStep:        1000,
+		BidStep:        200,
 		LatestBidTime:  time.Now().Format(time.RFC3339Nano),
 		StartTime:      time.Now().Format(time.RFC3339Nano),
 		EndTime:        time.Now().Add(1 * time.Hour).Format(time.RFC3339Nano),
 	}
+	bid := Bid{
+		BiddingID:      111,
+		BidderID:       user.AccountID,
+		BidderUsername: user.Username,
+		BidPrice:       10000,
+		BidTime:        time.Now().Format(time.RFC3339Nano),
+	}
+	InsertUserToDB(user)
 	InsertAuctionToDB(auction)
+	InsertBidToDB(bid, auction)
 }
 
 type Data struct {
@@ -137,7 +151,3 @@ func CreateAuctionMain(U *UserHashTable, A *AuctionHashTable, uid uint64, aid ui
 		return false, 1 // error code 1 , auction has been found in the system.
 	}
 }
-
-// Server : db.mcmullin.org:3306
-// username : auction
-// password : " first result usually used in programming world as an intro to everylanguage without spacing ,1"

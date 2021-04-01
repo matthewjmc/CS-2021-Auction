@@ -43,21 +43,20 @@ func HashAuction(targetID uint64) uint64 {
 }
 
 // A behavior of a hash table object used to insert an auction into a hash function to properly placed it at the correct index.
-func (h *AuctionHashTable) InsertAuctToHash(auction *Auction) {
+func (h *AuctionHashTable) InsertAuctToHash(auction *Auction) bool {
 	index := HashAuction(auction.AuctionID)
-	h.array[index].insertAuctToLinkedList(*auction)
-	fmt.Println("Added Success")
+	return h.array[index].insertAuctToLinkedList(*auction)
 }
 
 // Continuation of hash function insertion to place it within a linked list as a node.
-func (b *AuctionLinkedList) insertAuctToLinkedList(auction Auction) {
+func (b *AuctionLinkedList) insertAuctToLinkedList(auction Auction) bool {
 	if !b.searchAuctIDLinkedList(auction.AuctionID) {
 		newNode := &AuctionNode{key: auction}
 		newNode.next = b.head
 		b.head = newNode
-		fmt.Println("The auction has been inserted properly.")
+		return true
 	} else {
-		fmt.Println("The created auction already exists")
+		return false
 	}
 }
 
@@ -100,8 +99,6 @@ func (b *AuctionLinkedList) updateAuctionInLinkedList(k Auction) { //update auct
 	for currentNode != nil {
 		if currentNode.key.AuctionID == temp {
 			currentNode.key = k
-			fmt.Println(currentNode.key)
-			fmt.Println("updateAuction completed")
 			return
 		}
 		currentNode = currentNode.next
@@ -163,7 +160,6 @@ func (b *AuctionLinkedList) searchAuctNameInLinkedList(k Auction) bool { //For c
 		}
 		currentNode = currentNode.next
 	}
-	fmt.Println("There is no auction with that name in the memory.")
 	return false
 }
 
@@ -189,23 +185,22 @@ func CreateAuction(auctioneer User, initBid uint64, bidStep uint64, id uint64, d
 	return result
 }
 
-func (a *Auction) UpdateAuctionWinner(b Bid) string {
+func (a *Auction) UpdateAuctionWinner(b Bid) bool {
 
-	if b.bidTime > a.EndTime {
-		return "The auction has already ended"
+	if b.BidTime > a.EndTime {
+		return false
 	}
 
-	if (b.bidPrice > a.CurrMaxBid) && (b.bidPrice-a.CurrMaxBid) >= a.BidStep {
-		a.CurrMaxBid = b.bidPrice
-		a.CurrWinnerID = b.bidderID
-		a.LatestBidTime = b.bidTime
-		a.CurrWinnerName = b.bidderUsername
+	if (b.BidPrice > a.CurrMaxBid) && (b.BidPrice-a.CurrMaxBid) >= a.BidStep {
+		a.CurrMaxBid = b.BidPrice
+		a.CurrWinnerID = b.BidderID
+		a.LatestBidTime = b.BidTime
+		a.CurrWinnerName = b.BidderUsername
 	}
 
 	time.Sleep(1 * time.Millisecond)
-	report := fmt.Sprint(a.CurrWinnerID) + "is now the winner of auction" + fmt.Sprint(a.AuctionID)
 
-	return report
+	return true
 }
 
 // Create bidding to be used to update the auction.
@@ -214,20 +209,20 @@ func CreateBid(user User, price uint64, actionTime string) Bid {
 	id := rand.Uint64()
 	bid := Bid{}
 	bid = Bid{
-		biddingID:      id,
-		bidderID:       user.AccountID,
-		bidderUsername: user.Username,
-		bidPrice:       price,
-		bidTime:        actionTime,
+		BiddingID:      id,
+		BidderID:       user.AccountID,
+		BidderUsername: user.Username,
+		BidPrice:       price,
+		BidTime:        actionTime,
 	}
 	return bid
 }
 
 // Bid is a datatype used to store bid interactions containing the bidding information.
 type Bid struct {
-	biddingID      uint64
-	bidderID       uint64
-	bidderUsername string
-	bidPrice       uint64
-	bidTime        string
+	BiddingID      uint64
+	BidderID       uint64
+	BidderUsername string
+	BidPrice       uint64
+	BidTime        string
 }
