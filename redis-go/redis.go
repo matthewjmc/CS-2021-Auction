@@ -1,4 +1,4 @@
-package CS-2021-Auction
+package load_balance
 
 import (
 	"encoding/json"
@@ -8,7 +8,8 @@ import (
 	"reflect"
 	"strconv"
 
-	gs "CS-2021-Auction/getstat"
+	gs "load_balance/getstat"
+	rv "load_balance/reverseproxy"
 
 	"github.com/go-redis/redis"
 )
@@ -22,16 +23,6 @@ type Auction struct {
 	AddressIP        string
 	ConnectedClients int
 }
-
-// func main() {
-// 	updateConnectedUsers("1")
-// 	key1 := "10"
-// 	value1 := &Auction{Description: "someName1", AddressIP: "addr.1.23456781", ConnectedClients: +1}
-// 	SetKey("1", value1)
-// 	val := Client{Command: "create", Description: "asdd"}
-// 	keygen(Client{Command: "create", Description: "asdd"})
-// 	deleteAuction(Client{Command: "stop", Description: "asdd"}, "1")
-// }
 
 // set auctionID or key to auction struct input
 func SetKey(key string, value interface{}) (key1 string) {
@@ -71,24 +62,6 @@ func KeyGen(cli Client) (key string) {
 	var newkey = count + 1
 	key1 := strconv.Itoa(newkey)
 	fmt.Println(key1, reflect.TypeOf(key1))
-
-	//get CPU stat
-	// ln, err := net.Listen("tcp4", ":19530")
-	// 		if err != nil {
-	// 				fmt.Println(err)
-	// 		}
-	// 	fmt.Println("in1")
-	// for{
-	// 	conn, err := ln.Accept()
-	// 	fmt.Println("in2")
-	// 	if err != nil {
-	// 			fmt.Println(err)
-	// 			return
-	// 	}
-	// 	fmt.Println("in3")
-	// 	gs.GetStat(conn)
-	// 	fmt.Println("in4")
-	// 	}
 
 	ln1, err := net.Dial("tcp4", "com1.mcmullin.org:19530")
 	ln2, err := net.Dial("tcp4", "com2.mcmullin.org:19530")
@@ -135,7 +108,7 @@ func KeyGen(cli Client) (key string) {
 	return key1
 }
 
-// get addr to send to nonthicha
+// get addr to send to nonthicha reverse proxy
 func GetAddressByID(key string) (ip string) {
 	client := redis.NewClient(&redis.Options{
 		Addr:     "localhost: 6379",
@@ -152,6 +125,18 @@ func GetAddressByID(key string) (ip string) {
 		log.Fatal(err)
 	}
 	fmt.Println(src.AddressIP)
+	In, err := net.Listen("tcp4", ":19530")
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println("in1")
+	Inconn, err := In.Accept()
+	fmt.Println("in2")
+	go rv.ReProx(Inconn, src.AddressIP)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println("done")
 	return src.AddressIP
 }
 
@@ -175,8 +160,8 @@ func GetDescriptionByID(key string) (ip string) {
 	return src.Description
 }
 
-// update numbers of connected users
-func updateConnectedUsers(id string) (user int) {
+// update numbers of connected users and pass to reverse proxy
+func UpdateConnections(id string) (user int) {
 	client := redis.NewClient(&redis.Options{
 		Addr:     "localhost: 6379",
 		Password: "",
@@ -197,6 +182,7 @@ func updateConnectedUsers(id string) (user int) {
 	}
 	entry, err := json.Marshal(newval)
 	client.Set(id, entry, 0)
+
 	return count
 }
 
