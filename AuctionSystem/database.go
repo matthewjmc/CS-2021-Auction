@@ -50,10 +50,6 @@ func DatabaseInit() {
 	defer db.Close()
 }
 
-// Server : db.mcmullin.org:3306
-// username : auction
-// password : " first result usually used in programming world as an intro to everylanguage without spacing ,1"
-
 func InsertAuctionToDB(auction Auction) bool {
 	db, err := sql.Open("mysql", "auction:Helloworld1@tcp(db.mcmullin.org)/auction_system")
 	if err != nil {
@@ -144,4 +140,86 @@ func InsertBidToDB(bid Bid, target Auction) bool {
 	}
 	defer insert.Close()
 	return true
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+func UserFromDBtoHash(u *UserHashTable) (bool, uint64) {
+
+	db, err := sql.Open("mysql", "auction:Helloworld1@tcp(db.mcmullin.org)/auction_system")
+	if err != nil {
+		return false, 1 // code 1 : cannot connect to the database.
+		panic(err.Error())
+	}
+	defer db.Close()
+	user_result, _ := db.Query("SELECT * FROM user_table")
+
+	for user_result.Next() {
+		var id uint64
+		var username string
+		var fullname string
+		err = user_result.Scan(&id, &username, &fullname)
+		if err != nil {
+			return false, 3 // code 3 : failed to read information from the query.
+			panic(err)
+		}
+		user := CreateUser(username, fullname, id)
+		u.InsertUserToHash(user)
+
+		// fmt.Println(user)
+		// fmt.Println(id, username, fullname)  Can be used to debug whether the results are taken out properly or not.
+	}
+	err = user_result.Err()
+	if err != nil {
+		return false, 2 // code 2 : error from database transaction.
+		panic(err)
+	}
+	defer user_result.Close()
+	return true, 0 // code 0 : the program has retrieved the data properly.
+}
+
+func AuctionFromDBtoHash(a *AuctionHashTable) (bool, uint64) {
+
+	db, err := sql.Open("mysql", "auction:Helloworld1@tcp(db.mcmullin.org)/auction_system")
+	if err != nil {
+		return false, 1 // code 1 : cannot connect to the database.
+		panic(err.Error())
+	}
+	defer db.Close()
+
+	auct_result, _ := db.Query("SELECT * FROM auction_table")
+
+	for auct_result.Next() {
+		var auction_id, auctioneer_id, currwin_id, currmax_bid, step uint64
+		var itemname, currwinname, lastbidtime, starttime, endtime string
+		err = auct_result.Scan(&auction_id, &auctioneer_id, &itemname, &currwin_id, &currwinname, &currmax_bid, &step, &lastbidtime, &starttime, &endtime)
+		if err != nil {
+			return false, 3 // code 3 : failed to read information from the query.
+			panic(err)
+		}
+		auction := Auction{
+			AuctionID:      auction_id,
+			AuctioneerID:   auctioneer_id,
+			ItemName:       itemname,
+			CurrWinnerID:   currwin_id,
+			CurrWinnerName: currwinname,
+			CurrMaxBid:     currmax_bid,
+			BidStep:        step,
+			LatestBidTime:  lastbidtime,
+			StartTime:      starttime,
+			EndTime:        endtime,
+		}
+		a.InsertAuctToHash(&auction)
+
+		//fmt.Println(auction)
+		// fmt.Println(id, username, fullname)  Can be used to debug whether the results are taken out properly or not.
+	}
+	err = auct_result.Err()
+	if err != nil {
+		return false, 2 // code 2 : error from database transaction.
+		panic(err)
+	}
+	defer auct_result.Close()
+
+	return true, 0 // code 0 : the program has retrieved the data properly.
 }

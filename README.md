@@ -34,6 +34,7 @@ While these functions can be used to initiate database server with relationships
 #### InsertUserToDB( user User ) is used to insert users into the database. 
 #### InsertBidToDB( bid Bid  ) is used to insert bidding transactions into the database. 
 #### UpdateAuctionInDB( auction Auction ) is called to update the bidded auction within the database.
+#### UserFromDBToHash() and AuctionFromDBToHash() are used to retrieve records from the database in needed.
 
 =====================================================================================================================================================
 

@@ -9,9 +9,13 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
+/*
 func main() {
 	DatabaseInit()
+	u := UserAllocate()
+	CreateUserMain(u, 8888, "nonthicha")
 }
+*/
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // 3 Main Functions for business logic usage.
@@ -107,4 +111,21 @@ func test_database_transaction() {
 	MakeBidMain(u, a, 1338, 111111, 400, 2)
 	MakeBidMain(u, a, 7777, 111111, 1000, 3)
 	MakeBidMain(u, a, 9921, 222222, 1000, 4)
+}
+
+func test_retrieve_fromDB() {
+	u := UserAllocate()
+	a := AuctionAllocate()
+	UserFromDBtoHash(u)
+	u.SearchUserIDHashTable(9921)
+	u.SearchUserIDHashTable(7777)
+	u.SearchUserIDHashTable(1338)
+	fmt.Println(u.SearchUserIDHashTable(3333))
+	fmt.Println(*u.AccessUserHash(9921))
+	fmt.Println(*u.AccessUserHash(7777))
+	fmt.Println(*u.AccessUserHash(1338))
+	AuctionFromDBtoHash(a)
+	fmt.Println(a.SearchAuctIDHashTable(111111))
+	fmt.Println(a.AccessHashAuction(111111))
+
 }
