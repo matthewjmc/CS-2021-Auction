@@ -177,16 +177,22 @@ func CreateAuction(auctioneer User, initBid uint64, bidStep uint64, id uint64, d
 }
 
 func (a *Auction) UpdateAuctionWinner(b Bid) bool {
-	if b.BidTime > a.EndTime {
+	bidtime, err := time.Parse(time.RFC3339Nano, b.BidTime)
+	endtime, err2 := time.Parse(time.RFC3339Nano, a.EndTime)
+	if err != nil || err2 != nil {
 		return false
+	} else {
+		if bidtime.After(endtime) {
+			return false
+		}
+		if (b.BidPrice > a.CurrMaxBid) && (b.BidPrice-a.CurrMaxBid) >= a.BidStep {
+			a.CurrMaxBid = b.BidPrice
+			a.CurrWinnerID = b.BidderID
+			a.LatestBidTime = b.BidTime
+			a.CurrWinnerName = b.BidderUsername
+		}
+		return true
 	}
-	if (b.BidPrice > a.CurrMaxBid) && (b.BidPrice-a.CurrMaxBid) >= a.BidStep {
-		a.CurrMaxBid = b.BidPrice
-		a.CurrWinnerID = b.BidderID
-		a.LatestBidTime = b.BidTime
-		a.CurrWinnerName = b.BidderUsername
-	}
-	return true
 }
 
 // Create bidding to be used to update the auction.

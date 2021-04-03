@@ -38,3 +38,24 @@ While these functions can be used to initiate database server with relationships
 
 =====================================================================================================================================================
 
+#### Code Optimization and Time Usage regarding Localhost:3306 testing.
+This section composes of time analysis upon the business logic and database transaction part which will affect the system as a whole. Consideration of time-efficient and preciseness are a priority for the third milestone.
+
+#### For this part, time usage for each functions are used to consider the possibility of actual launched server required resources. So, time is captured to analyze for each possible case.
+
+- Time required to complete CreateUserMain() which composed of user struct creation and insertion into both the server cache and the locally hosted database is approximately 1-2 milliseconds while implementing it to be on the actual MariaDB database will require approximately 50-70 milliseconds with consideration of network latency and local computation time.
+
+- Time required to complete CreateAuctionMain() which considers auction struct creation and inserting it into the server-cache and the database takes around 3 milliseconds while taking ~60 milliseconds to complete the database statement and inserting it into the database itself.
+
+- Lastly, time required to complete MakeBidMain(). The provided time includes creating bid struct along with checking whether the newly placed bid would win the auction or not and either update the targeted auction for its new winner within the server cache and the database or ignore the updates.
+
+    - For the bidding transaction, it takes around 1-3 milliseconds to create and insert it into the locally hosted database, while it instead takes around 57-63 milliseconds to apply it onto the actual running server.
+    - For the auction updating section, 1.5-2.5 milliseconds is required to completely update the auction onto both the server-cache and the database while it takes 60-70 milliseconds to the actual database server.
+    - If the auction is not being updated due to the losing condition, it takes around 500-600 microseconds(local) or 60 milliseconds(actual server) just to ignore both the query and server-cache updates.
+    
+    - In summary, for this section for the whole MakeBidMain() function, it takes within 2 to 5 milliseconds as its maximum (locally) or 62-65 milliseconds (to the server).
+
+
+
+
+
