@@ -3,7 +3,6 @@ package AuctionSystem
 import (
 	"database/sql"
 	"fmt"
-	"strconv"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -50,40 +49,19 @@ func DatabaseInit() {
 	defer db.Close()
 }
 
-func InsertAuctionToDB(auction Auction, result chan bool) {
-	db, err := sql.Open("mysql", "auction:Helloworld1@tcp(db.mcmullin.org)/auction_system")
+func InsertAuctionToDB(auction Auction, db *sql.DB) bool {
+	query, err := db.Prepare("INSERT INTO auction_table VALUES (?,?,?,?,?,?,?,?,?,?)")
 	if err != nil {
 		panic(err.Error())
 	}
-	defer db.Close()
-	query := "INSERT INTO auction_table(AuctionID,AuctioneerID,ItemName,CurrWinnerID,CurrWinnerName,CurrMaxBid,BidStep,LatestBidTime,StartTime,EndTime) VALUES ("
-	auctionId := strconv.FormatUint(auction.AuctionID, 10)
-	auctioneerId := "," + strconv.FormatUint(auction.AuctioneerID, 10)
-	itemName := "," + "\"" + auction.ItemName + "\""
-	currWinnerID := "," + strconv.FormatUint(auction.CurrWinnerID, 10)
-	currWinnerName := "," + "\"" + auction.CurrWinnerName + "\""
-	currMaxBid := "," + strconv.FormatUint(auction.CurrMaxBid, 10)
-	bidStep := "," + strconv.FormatUint(auction.BidStep, 10)
-	latestBidTime := "," + "\"" + auction.LatestBidTime + "\""
-	startTime := "," + "\"" + auction.StartTime + "\""
-	EndTime := "," + "\"" + auction.EndTime + "\""
-	exec := query + auctionId + auctioneerId + itemName + currWinnerID + currWinnerName + currMaxBid + bidStep + latestBidTime + startTime + EndTime + ")"
-	insert, err := db.Query(exec)
-	if err != nil {
-		panic(err.Error())
-	}
-	defer insert.Close()
-	result <- true
+
+	query.Exec(auction.AuctionID, auction.AuctioneerID, auction.ItemName, auction.CurrWinnerID, auction.CurrWinnerName, auction.CurrMaxBid, auction.BidStep, auction.LatestBidTime, auction.StartTime, auction.EndTime)
+	defer query.Close()
+
+	return true
 }
 
-func UpdateAuctionInDB(auction Auction, result chan bool) {
-
-	db, err := sql.Open("mysql", "auction:Helloworld1@tcp(db.mcmullin.org)/auction_system")
-	if err != nil {
-		panic(err.Error())
-	}
-	defer db.Close()
-
+func UpdateAuctionInDB(auction Auction, db *sql.DB) bool {
 	update, err := db.Prepare("UPDATE auction_table SET CurrMaxBid = ? , CurrWinnerID = ? , CurrWinnerName = ? , LatestBidTime = ? WHERE AuctionID = ?")
 	if err != nil {
 		panic(err.Error())
@@ -91,157 +69,46 @@ func UpdateAuctionInDB(auction Auction, result chan bool) {
 
 	update.Exec(auction.CurrMaxBid, auction.CurrWinnerID, auction.CurrWinnerName, auction.LatestBidTime, auction.AuctionID)
 	defer update.Close()
-	result <- true
+
+	return true
 }
 
-func InsertUserToDB(user User, result chan bool) {
-
-	db, err := sql.Open("mysql", "auction:Helloworld1@tcp(db.mcmullin.org)/auction_system")
+func InsertUserToDB(user User, db *sql.DB) bool {
+	/*
+		db, err := sql.Open("mysql", "auction:Helloworld1@tcp(db.mcmullin.org)/auction_system")
+		if err != nil {
+			panic(err.Error())
+		}
+		defer db.Close()
+	*/
+	query, err := db.Prepare("INSERT INTO user_table VALUES (?,?,?)")
 	if err != nil {
 		panic(err.Error())
 	}
-	defer db.Close()
 
-	query := "INSERT INTO user_table(AccountID,Username,Fullname) VALUES ("
-	accountId := strconv.FormatUint(user.AccountID, 10)
-	username := "," + "\"" + user.Username + "\""
-	fullname := "," + "\"" + user.Fullname + "\""
+	query.Exec(user.AccountID, user.Username, user.Fullname)
+	defer query.Close()
 
-	exec := query + accountId + username + fullname + ")"
-	insert, err := db.Query(exec)
-	if err != nil {
-		panic(err.Error())
-	}
-	defer insert.Close()
-
-	result <- true
-
-}
-
-func InsertBidToDB(bid Bid, target Auction, result chan bool) {
-
-	db, err := sql.Open("mysql", "auction:Helloworld1@tcp(db.mcmullin.org)/auction_system")
-	if err != nil {
-		panic(err.Error())
-	}
-	defer db.Close()
-
-	query := "INSERT INTO bid_table(BiddingID,BidderID,BidderUsername,BidPrice,BidTime,AuctionID) VALUES ("
-
-	bidId := strconv.FormatUint(bid.BiddingID, 10)
-	bidderId := "," + strconv.FormatUint(bid.BidderID, 10)
-	bidderName := "," + "\"" + bid.BidderUsername + "\""
-	bidPrice := "," + strconv.FormatUint(bid.BidPrice, 10)
-	bidTime := "," + "\"" + bid.BidTime + "\""
-	AuctionId := "," + strconv.FormatUint(target.AuctionID, 10)
-	exec := query + bidId + bidderId + bidderName + bidPrice + bidTime + AuctionId + ")"
-	insert, err := db.Query(exec)
-	if err != nil {
-		panic(err.Error())
-	}
-	defer insert.Close()
-	result <- true
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-func InsertAuctionToDB_Original(auction Auction) bool {
-	db, err := sql.Open("mysql", "auction:Helloworld1@tcp(db.mcmullin.org)/auction_system")
-	if err != nil {
-		panic(err.Error())
-	}
-	defer db.Close()
-	query := "INSERT INTO auction_table(AuctionID,AuctioneerID,ItemName,CurrWinnerID,CurrWinnerName,CurrMaxBid,BidStep,LatestBidTime,StartTime,EndTime) VALUES ("
-	auctionId := strconv.FormatUint(auction.AuctionID, 10)
-	auctioneerId := "," + strconv.FormatUint(auction.AuctioneerID, 10)
-	itemName := "," + "\"" + auction.ItemName + "\""
-	currWinnerID := "," + strconv.FormatUint(auction.CurrWinnerID, 10)
-	currWinnerName := "," + "\"" + auction.CurrWinnerName + "\""
-	currMaxBid := "," + strconv.FormatUint(auction.CurrMaxBid, 10)
-	bidStep := "," + strconv.FormatUint(auction.BidStep, 10)
-	latestBidTime := "," + "\"" + auction.LatestBidTime + "\""
-	startTime := "," + "\"" + auction.StartTime + "\""
-	EndTime := "," + "\"" + auction.EndTime + "\""
-	exec := query + auctionId + auctioneerId + itemName + currWinnerID + currWinnerName + currMaxBid + bidStep + latestBidTime + startTime + EndTime + ")"
-	insert, err := db.Query(exec)
-	if err != nil {
-		panic(err.Error())
-	}
-	defer insert.Close()
 	return true
 }
 
-func UpdateAuctionInDB_Original(auction Auction) bool {
+func InsertBidToDB(bid Bid, target uint64, db *sql.DB) bool {
 
-	db, err := sql.Open("mysql", "auction:Helloworld1@tcp(db.mcmullin.org)/auction_system")
+	query, err := db.Prepare("INSERT INTO bid_table VALUES ( ? , ? , ? , ? , ? , ? )")
 	if err != nil {
-		panic(err.Error())
-	}
-	defer db.Close()
-
-	update, err := db.Prepare("UPDATE auction_table SET CurrMaxBid = ? , CurrWinnerID = ? , CurrWinnerName = ? , LatestBidTime = ? WHERE AuctionID = ?")
-	if err != nil {
-		panic(err.Error())
+		panic(err)
 	}
 
-	update.Exec(auction.CurrMaxBid, auction.CurrWinnerID, auction.CurrWinnerName, auction.LatestBidTime, auction.AuctionID)
-	defer update.Close()
-	return true
-}
-
-func InsertUserToDB_Original(user User) bool {
-
-	db, err := sql.Open("mysql", "auction:Helloworld1@tcp(db.mcmullin.org)/auction_system")
-	if err != nil {
-		panic(err.Error())
-	}
-	defer db.Close()
-
-	query := "INSERT INTO user_table(AccountID,Username,Fullname) VALUES ("
-	accountId := strconv.FormatUint(user.AccountID, 10)
-	username := "," + "\"" + user.Username + "\""
-	fullname := "," + "\"" + user.Fullname + "\""
-
-	exec := query + accountId + username + fullname + ")"
-	insert, err := db.Query(exec)
-	if err != nil {
-		panic(err.Error())
-	}
-	defer insert.Close()
+	query.Exec(bid.BiddingID, bid.BidderID, bid.BidderUsername, bid.BidPrice, bid.BidTime, target)
+	defer query.Close()
 
 	return true
 
-}
-
-func InsertBidToDB_Original(bid Bid, target Auction) bool {
-
-	db, err := sql.Open("mysql", "auction:Helloworld1@tcp(db.mcmullin.org)/auction_system")
-	if err != nil {
-		panic(err.Error())
-	}
-	defer db.Close()
-
-	query := "INSERT INTO bid_table(BiddingID,BidderID,BidderUsername,BidPrice,BidTime,AuctionID) VALUES ("
-
-	bidId := strconv.FormatUint(bid.BiddingID, 10)
-	bidderId := "," + strconv.FormatUint(bid.BidderID, 10)
-	bidderName := "," + "\"" + bid.BidderUsername + "\""
-	bidPrice := "," + strconv.FormatUint(bid.BidPrice, 10)
-	bidTime := "," + "\"" + bid.BidTime + "\""
-	AuctionId := "," + strconv.FormatUint(target.AuctionID, 10)
-	exec := query + bidId + bidderId + bidderName + bidPrice + bidTime + AuctionId + ")"
-	insert, err := db.Query(exec)
-	if err != nil {
-		panic(err.Error())
-	}
-	defer insert.Close()
-	return true
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 func UserFromDBtoHash(u *UserHashTable) (bool, uint64) {
-
 	db, err := sql.Open("mysql", "auction:Helloworld1@tcp(db.mcmullin.org)/auction_system")
 	if err != nil {
 		return false, 1 // code 1 : cannot connect to the database.
