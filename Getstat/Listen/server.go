@@ -1,5 +1,7 @@
 package main
 
+// Locate on backend servers 1 and 2 to get cpu stat and send to load balance when called.
+
 import (
 	"bufio"
 	"fmt"
@@ -13,7 +15,7 @@ import (
 )
 
 func main() {
-	ln, err := net.Listen("tcp4", ":80")
+	ln, err := net.Listen("tcp4", ":20001")
 	conn, err := ln.Accept()
 	if err != nil {
 		fmt.Println(err)
@@ -24,18 +26,8 @@ func main() {
 			fmt.Println(err)
 		}
 		data := Usage()
-		// reader := bufio.NewReader(data)
-		// fmt.Print(">> ")
-		// text, _ := reader.ReadString('\n')
 		fmt.Fprintf(conn, "From server one:"+data+"\n")
 
-		// message, _ := bufio.NewReader(conn).ReadString('\n')
-		// fmt.Print("->: " + message)
-		// if strings.TrimSpace(string(data)) == "STOP" {
-		// 	fmt.Println("TCP client exiting...")
-		// 	return
-		// }
-		//time.Sleep(1 * time.Second)
 	}
 
 }
@@ -56,7 +48,7 @@ func Usage() (data string) {
 	return vs
 }
 
-// Stats represents cpu statistics for linux
+// Stats = cpu statistics for linux
 type Stats struct {
 	User      uint64
 	Nice      uint64
@@ -116,7 +108,7 @@ func collectCPUStats() *Stats {
 		cpu.Total += val
 	}
 
-	// Since cpustat[CPUTIME_USER] includes cpustat[CPUTIME_GUEST], subtract the duplicated values from total.
+	// Since cpustat[CPUTIME_USER] includes cpustat[CPUTIME_GUEST], subtract duplicated values from total.
 	// https://github.com/torvalds/linux/blob/4ec9f7a18/kernel/sched/cputime.c#L151-L158
 	cpu.Total -= cpu.Guest
 	// cpustat[CPUTIME_NICE] includes cpustat[CPUTIME_GUEST_NICE]

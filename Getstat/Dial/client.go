@@ -1,5 +1,8 @@
 package main
 
+// Locate on the load balance to continuously get free CPU usage percentage and store in redis
+// for faster retrieve each time the user use create command
+
 import (
 	"bufio"
 	"encoding/json"
@@ -16,12 +19,11 @@ type Data struct {
 	Usage float64
 }
 
-var S1_Usage, S2_Usage float64
 var Usage float64
 
 func main() {
-	ln1, err := net.Dial("tcp4", "com1.mcmullin.org:80")
-	ln2, err := net.Dial("tcp4", "com2.mcmullin.org:80")
+	ln1, err := net.Dial("tcp4", "com1.mcmullin.org:20001")
+	ln2, err := net.Dial("tcp4", "com2.mcmullin.org:20001")
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -35,25 +37,6 @@ func main() {
 	//time.Sleep(1000 * time.Second)
 
 }
-
-// update numbers of connected users and pass to reverse proxy
-// func UpdateUsage(id string, value float64) {
-// 	client := redis.NewClient(&redis.Options{
-// 		Addr:     "localhost: 6379",
-// 		Password: "",
-// 		DB:       0,
-// 	})
-// 	val, err := client.Get(id).Result()
-// 	if err != nil {
-// 		fmt.Println(err)
-// 	}
-// 	src := Data{}
-// 	err = json.Unmarshal([]byte(val), &src)
-// 	newval := value
-// 	entry, err := json.Marshal(newval)
-// 	client.Set(id, entry, 0)
-// 	client.Close()
-// }
 
 func GetStat(conn net.Conn) {
 	defer conn.Close()

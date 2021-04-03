@@ -1,14 +1,13 @@
 package load_balance
 
+// Cache for auctionID with address for that specific auction.
+
 import (
 	"encoding/json"
 	"fmt"
 	"log"
-
-	//"net"
 	"strconv"
 
-	//gs "load_balance/getstat"
 	rv "load_balance/reverseproxy"
 
 	"github.com/go-redis/redis"
@@ -61,7 +60,8 @@ func SetKey(key string, value interface{}) (key1 string) {
 	return key
 }
 
-// return new key to matthew's side (client) and lock the ip addr for that key
+// append new key to redis and lock the ip addr for that key
+// pass the key into the package to send over to backend
 func KeyGen(init rv.Package) (key string, data rv.Package) {
 	client := redis.NewClient(&redis.Options{
 		Addr:     "localhost: 6379",
@@ -91,12 +91,9 @@ func KeyGen(init rv.Package) (key string, data rv.Package) {
 	S2_Usage, _ := strconv.ParseFloat(S2, 64)
 
 	var value Auction
-	// fmt.Println("S1", S1_Usage)
-	// fmt.Println("S2", S2_Usage)
 
 	//set IP address to that key
 	if S1_Usage > S2_Usage {
-		//fmt.Println("IF")
 		value.AddressIP = "10.104.0.9:19530"
 		value.ConnectedClients = 0
 		entry, err := json.Marshal(value)
@@ -108,7 +105,6 @@ func KeyGen(init rv.Package) (key string, data rv.Package) {
 			fmt.Println(err)
 		}
 	} else if S2_Usage > S1_Usage {
-		//fmt.Println("ELSEIF")
 		value.AddressIP = "10.104.0.8:19530"
 		value.ConnectedClients = 0
 		entry, err := json.Marshal(value)
@@ -120,7 +116,6 @@ func KeyGen(init rv.Package) (key string, data rv.Package) {
 			fmt.Println(err)
 		}
 	} else {
-		//fmt.Println("Else")
 		value.AddressIP = "10.104.0.9:19530"
 		value.ConnectedClients = 0
 		entry, err := json.Marshal(value)
@@ -133,18 +128,15 @@ func KeyGen(init rv.Package) (key string, data rv.Package) {
 		}
 	}
 
-	//fmt.Println(value.AddressIP)
 	client.Close()
 	init.Data.Value = uint64(newkey)
-	//fmt.Println(uint64(newkey))
-	//go rv.ReProx(Inconn, value.AddressIP, init)
 	if err != nil {
 		fmt.Println(err)
 	}
 	return value.AddressIP, init
 }
 
-// get addr to send to nonthicha reverse proxy
+// get package and addr to pass to reverse proxy
 func RequestConnection(key string, init rv.Package) (string, rv.Package) { //(ip string)
 	client := redis.NewClient(&redis.Options{
 		Addr:     "localhost: 6379",
@@ -161,16 +153,11 @@ func RequestConnection(key string, init rv.Package) (string, rv.Package) { //(ip
 	if err != nil {
 		log.Fatal(err)
 	}
-	//fmt.Println(src.AddressIP)
 	client.Close()
-	//rv.ReProx(Inconn, src.AddressIP, init)
 	if err != nil {
 		fmt.Println(err)
 	}
 	return src.AddressIP, init
-	// Inconn.Close()
-	//fmt.Println("done")
-	//return src.AddressIP
 }
 
 // update numbers of connected users and pass to reverse proxy
