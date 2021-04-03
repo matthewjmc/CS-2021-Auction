@@ -11,7 +11,7 @@ func TestLocalHost() {
 	a := AuctionAllocate()
 	u := UserAllocate()
 
-	db, err := sql.Open("mysql", "localhost_username:localhost_password@tcp(localhost:3306)/auction_system")
+	db, err := sql.Open("mysql", Local_conn)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -37,7 +37,7 @@ func TestServer() {
 	a := AuctionAllocate()
 	u := UserAllocate()
 
-	db, err := sql.Open("mysql", "server_username:server_password@tcp(server_addr)/auction_system")
+	db, err := sql.Open("mysql", Server_init)
 	if err != nil {
 		panic(err.Error())
 	}

@@ -7,10 +7,15 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
+const Local_init string = "local_username:local_password@tcp(localhost:3306)/"
+const Local_conn string = "local_username:local_password@tcp(localhost:3306)/auction_system"
+const Server_init string = "server_username:server_password@tcp(server_addr)/"
+const Server_conn string = "server_username:server_password@tcp(server_addr)/auction_system"
+
 // _____DatabaseInit() functions are used to initialize the database along with its relationships upon each tables.
 func LocalHostDatabaseInit() {
 
-	db, debug := sql.Open("mysql", "server_username:server_password@tcp(server_addr)/")
+	db, debug := sql.Open("mysql", Local_init)
 	if debug != nil {
 		fmt.Println(debug.Error())
 	}
@@ -53,7 +58,7 @@ func LocalHostDatabaseInit() {
 // _____DatabaseInit() functions are used to initialize the database along with its relationships upon each tables.
 func ServerDatabaseInit() {
 
-	db, debug := sql.Open("mysql", "server_username:server_password@tcp(server_addr)/auction_system")
+	db, debug := sql.Open("mysql", Server_init)
 	if debug != nil {
 		fmt.Println(debug.Error())
 	}

@@ -18,7 +18,7 @@ func testingFinal() {
 	a := AuctionAllocate()
 	u := UserAllocate()
 
-	db, err := sql.Open("mysql", "server_username:server_password@tcp(server_addr)/auction_system")
+	db, err := sql.Open("mysql", Server_conn)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -29,12 +29,20 @@ func testingFinal() {
 	CreateAuctionMain(u, a, 9921, 555555, 100, 100, 1, "GOGOGOPHER", db)
 	time.Sleep(1 * time.Second)
 	MakeBidMain(u, a, 9921, 555555, 300, 1, db)
+	fmt.Println(u.AccessUserHash(9921))
 	time.Sleep(1 * time.Second)
 	MakeBidMain(u, a, 3257, 555555, 550, 3, db)
 	time.Sleep(1 * time.Second)
 	MakeBidMain(u, a, 1777, 555555, 350, 2, db)
 	time.Sleep(1 * time.Second)
+	fmt.Println(u.AccessUserHash(9921))
 	MakeBidMain(u, a, 3257, 222222, 300, 4, db)
+	time.Sleep(1 * time.Second)
+	u.SearchUserIDHashTable(9921)
+	a.SearchAuctIDHashTable(555555)
+	fmt.Println(u.AccessUserHash(9921))
+	fmt.Println(a.AccessHashAuction(555555))
+	time.Sleep(1 * time.Second)
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -49,7 +57,7 @@ func MakeBidMain(u *UserHashTable, h *AuctionHashTable, uid uint64, targetid uin
 	if !target.UpdateAuctionWinner(newBid) {
 	} else {
 		go UpdateAuctionInDB(*target, db)
-		h.AuctionHashAccessUpdate(*target)
+		go h.AuctionHashAccessUpdate(*target)
 	}
 }
 
@@ -57,7 +65,7 @@ func CreateUserMain(h *UserHashTable, uid uint64, name string, db *sql.DB) {
 	if !h.SearchUserIDHashTable(uid) {
 		newUser := CreateUser("username"+fmt.Sprint(uid), name, uid)
 		go InsertUserToDB(newUser, db)
-		h.InsertUserToHash(newUser)
+		go h.InsertUserToHash(newUser)
 	}
 }
 
@@ -69,6 +77,6 @@ func CreateAuctionMain(U *UserHashTable, A *AuctionHashTable, uid uint64, aid ui
 	if !A.SearchAuctIDHashTable(aid) {
 		newAuction := CreateAuction(*user, initial, step, aid, duration, itemName)
 		go InsertAuctionToDB(newAuction, db)
-		A.InsertAuctToHash(&newAuction)
+		go A.InsertAuctToHash(&newAuction)
 	}
 }
