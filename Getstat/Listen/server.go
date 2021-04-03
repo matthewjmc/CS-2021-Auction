@@ -5,110 +5,132 @@ import (
 	"fmt"
 	"io"
 	"net"
-	"regexp"
+	"os"
+	"strconv"
 	"strings"
 	"time"
-	//"sync"
-	//"reflect"
-	//rv "load_balance/reverseproxy"
+	"unicode"
 )
 
-var S1_Usage, S2_Usage string
-
-// this will locate on the loadbalance server to listen for cpu usage from S1/S2
-// every period of time set
 func main() {
-	//var wg sync.WaitGroup
-	conn, err := net.Dial("tcp4", ":19530")
+	ln, err := net.Listen("tcp4", ":80")
+	conn, err := ln.Accept()
 	if err != nil {
 		fmt.Println(err)
 	}
-
-	//wg.Add(1)
-	go getStat(conn)
-	//wg.Wait()
-
-}
-
-func getStat(conn net.Conn) {
-	defer conn.Close()
+	defer ln.Close()
 	for {
-		netData, err := bufio.NewReader(conn).ReadString('\n')
 		if err != nil {
 			fmt.Println(err)
 		}
-		if strings.TrimSpace(string(netData)) == "STOP" {
-			fmt.Println("Exiting TCP server!")
-		}
+		data := Usage()
+		// reader := bufio.NewReader(data)
+		// fmt.Print(">> ")
+		// text, _ := reader.ReadString('\n')
+		fmt.Fprintf(conn, "From server one:"+data+"\n")
 
-		usage := string(netData)
-		fmt.Println(usage)
-		if usage[12] == 116 {
-			re := regexp.MustCompile(`[-]?\d[\d,]*[\.]?[\d{2}]*`)
-			submatchall := re.FindAllString(usage, -1)
-			for _, element := range submatchall {
-				S2_Usage = element
-				fmt.Println(S2_Usage)
-			}
-		}
-		if usage[12] == 111 {
-			re := regexp.MustCompile(`[-]?\d[\d,]*[\.]?[\d{2}]*`)
-			submatchall := re.FindAllString(usage, -1)
-			for _, element := range submatchall {
-				S1_Usage = element
-				fmt.Println(S1_Usage)
-			}
-		}
-
-		t := time.Now()
-		myTime := t.Format(time.RFC3339) + "\n"
-		conn.Write([]byte(myTime))
-		continue
+		// message, _ := bufio.NewReader(conn).ReadString('\n')
+		// fmt.Print("->: " + message)
+		// if strings.TrimSpace(string(data)) == "STOP" {
+		// 	fmt.Println("TCP client exiting...")
+		// 	return
+		// }
+		//time.Sleep(1 * time.Second)
 	}
+
 }
 
-func CheckEvery(d time.Duration, f func(time.Time)) {
-	for x := range time.Tick(d) {
-		CheckAlive(x)
-	}
+func Usage() (data string) {
+	before := collectCPUStats()
+
+	time.Sleep(time.Duration(1) * time.Second)
+	after := collectCPUStats()
+
+	total := float64(after.Total - before.Total)
+	idle := float64(after.Idle-before.Idle) / total * 100
+	fmt.Println("cpu idle:", idle)
+
+	vs := strconv.FormatFloat(float64(idle), 'f', 2, 64)
+	send := []byte(`"` + vs + `"`)
+	fmt.Println(send)
+	return vs
 }
 
-func CheckAlive(t time.Time) {
-	conn, _ := net.Dial("tcp", ":1123")
-	err := conn.(*net.TCPConn).SetKeepAlive(true)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	err = conn.(*net.TCPConn).SetKeepAlivePeriod(30 * time.Second)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	notify := make(chan error)
+// Stats represents cpu statistics for linux
+type Stats struct {
+	User      uint64
+	Nice      uint64
+	System    uint64
+	Idle      uint64
+	Iowait    uint64
+	Irq       uint64
+	Softirq   uint64
+	Steal     uint64
+	Guest     uint64
+	GuestNice uint64
+	Total     uint64
+	CPUCount  int
+	StatCount int
+}
 
-	go func() {
-		buf := make([]byte, 1024)
-		for {
-			n, err := conn.Read(buf)
-			if err != nil {
-				notify <- err
-				if io.EOF == err {
-					close(notify)
-					return
-				}
-			}
-			if n > 0 {
-				fmt.Println("unexpected data:", buf[:n])
-			}
-		}
-	}()
-	select {
-	case err := <-notify:
-		fmt.Println(time.Now(), "connection1 dropped:", err)
-		return
-	case <-time.After(time.Second * 1):
-		fmt.Println(time.Now(), "timeout1, still alive")
+type cpuStat struct {
+	name string
+	ptr  *uint64
+}
+
+func collectCPUStats() *Stats {
+	file, err := os.Open("/proc/stat")
+	if err != nil {
+		fmt.Println(err)
 	}
-	defer conn.Close()
+	defer file.Close()
+	out := io.Reader(file)
+	scanner := bufio.NewScanner(out)
+	var cpu Stats
+
+	cpuStats := []cpuStat{
+		{"user", &cpu.User},
+		{"nice", &cpu.Nice},
+		{"system", &cpu.System},
+		{"idle", &cpu.Idle},
+		{"iowait", &cpu.Iowait},
+		{"irq", &cpu.Irq},
+		{"softirq", &cpu.Softirq},
+		{"steal", &cpu.Steal},
+		{"guest", &cpu.Guest},
+		{"guest_nice", &cpu.GuestNice},
+	}
+
+	if !scanner.Scan() {
+		fmt.Println("failed to scan /proc/stat")
+	}
+
+	valStrs := strings.Fields(scanner.Text())[1:]
+	cpu.StatCount = len(valStrs)
+	for i, valStr := range valStrs {
+		val, err := strconv.ParseUint(valStr, 10, 64)
+		if err != nil {
+			fmt.Println("failed to scan", cpuStats[i].name)
+		}
+		*cpuStats[i].ptr = val
+		cpu.Total += val
+	}
+
+	// Since cpustat[CPUTIME_USER] includes cpustat[CPUTIME_GUEST], subtract the duplicated values from total.
+	// https://github.com/torvalds/linux/blob/4ec9f7a18/kernel/sched/cputime.c#L151-L158
+	cpu.Total -= cpu.Guest
+	// cpustat[CPUTIME_NICE] includes cpustat[CPUTIME_GUEST_NICE]
+	cpu.Total -= cpu.GuestNice
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.HasPrefix(line, "cpu") && unicode.IsDigit(rune(line[3])) {
+			cpu.CPUCount++
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		fmt.Println("scan error for /proc/stat:", err)
+	}
+
+	return &cpu
 }
