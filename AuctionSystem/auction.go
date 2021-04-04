@@ -1,6 +1,8 @@
 package AuctionSystem
 
 import (
+	"fmt"
+	"math/rand"
 	"time"
 )
 
@@ -16,19 +18,20 @@ type Auction struct {
 	LatestBidTime  string
 	StartTime      string
 	EndTime        string
+	ActionCount    uint64
 }
 
 type AuctionHashTable struct {
-	array [ArraySize]*AuctionLinkedList
+	Array [ArraySize]*AuctionLinkedList
 }
 
 type AuctionLinkedList struct {
-	head *AuctionNode
+	Head *AuctionNode
 }
 
 type AuctionNode struct {
-	key  Auction
-	next *AuctionNode
+	Key  Auction
+	Next *AuctionNode
 }
 
 type AuctionReport struct {
@@ -41,37 +44,36 @@ func HashAuction(targetID uint64) uint64 {
 }
 
 // A behavior of a hash table object used to insert an auction into a hash function to properly placed it at the correct index.
-func (h *AuctionHashTable) InsertAuctToHash(auction *Auction) bool {
+func (h *AuctionHashTable) InsertAuctToHash(auction *Auction) {
 	index := HashAuction(auction.AuctionID)
-	return h.array[index].insertAuctToLinkedList(*auction)
+	h.Array[index].insertAuctToLinkedList(*auction)
+	// fmt.Println("Added Success")
 }
 
 // Continuation of hash function insertion to place it within a linked list as a node.
-func (b *AuctionLinkedList) insertAuctToLinkedList(auction Auction) bool {
+func (b *AuctionLinkedList) insertAuctToLinkedList(auction Auction) {
 	if !b.searchAuctIDLinkedList(auction.AuctionID) {
-		newNode := &AuctionNode{key: auction}
-		newNode.next = b.head
-		b.head = newNode
-		return true
-	} else {
-		return false
+		newNode := &AuctionNode{Key: auction}
+		newNode.Next = b.Head
+		b.Head = newNode
+		//fmt.Println("The auction has been inserted properly.")
 	}
 }
 
 // A behavior of a hash table object used to search of an auction object within the hash table using auction ID of each auction.
 func (h *AuctionHashTable) SearchAuctIDHashTable(auctionid uint64) bool {
 	index := HashAuction(auctionid)
-	return h.array[index].searchAuctIDLinkedList(auctionid)
+	return h.Array[index].searchAuctIDLinkedList(auctionid)
 }
 
 // Continuation of seachAuctIDHashTable() function to continue the search within the linked list at the hash index location.
 func (b *AuctionLinkedList) searchAuctIDLinkedList(auctionid uint64) bool { //For search the auction by using auctionID
-	currentNode := b.head
+	currentNode := b.Head
 	for currentNode != nil {
-		if currentNode.key.AuctionID == auctionid {
+		if currentNode.Key.AuctionID == auctionid {
 			return true
 		}
-		currentNode = currentNode.next
+		currentNode = currentNode.Next
 	}
 	//fmt.Println("There is no auction with that ID in the memory.")
 	return false
@@ -80,64 +82,105 @@ func (b *AuctionLinkedList) searchAuctIDLinkedList(auctionid uint64) bool { //Fo
 // Hash block allocation.
 func AuctionAllocate() *AuctionHashTable {
 	result := &AuctionHashTable{}
-	for i := range result.array {
-		result.array[i] = &AuctionLinkedList{}
+	for i := range result.Array {
+		result.Array[i] = &AuctionLinkedList{}
 	}
 	return result
 }
 
 func (h *AuctionHashTable) AuctionHashAccessUpdate(key Auction) {
 	index := HashAuction(key.AuctionID)
-	h.array[index].updateAuctionInLinkedList(key)
+	h.Array[index].updateAuctionInLinkedList(key)
 }
 
 func (b *AuctionLinkedList) updateAuctionInLinkedList(k Auction) { //update auction
-	currentNode := b.head
+	currentNode := b.Head
 	temp := k.AuctionID
 	for currentNode != nil {
-		if currentNode.key.AuctionID == temp {
-			currentNode.key = k
+		if currentNode.Key.AuctionID == temp {
+			currentNode.Key = k
+			// fmt.Println(currentNode.key)
+			// fmt.Println("updateAuction completed")
 			return
 		}
-		currentNode = currentNode.next
+		currentNode = currentNode.Next
 	}
 }
 func (h *AuctionHashTable) AccessHashAuction(auctionID uint64) *Auction {
 
 	index := HashAuction(auctionID)
-	return h.array[index].accessLinkedListAuction(auctionID)
+	return h.Array[index].accessLinkedListAuction(auctionID)
 }
 
 func (b *AuctionLinkedList) accessLinkedListAuction(auctionID uint64) *Auction { //For checking when updated
-	currentNode := b.head
+	currentNode := b.Head
 	for currentNode != nil {
-		if currentNode.key.AuctionID == auctionID {
-			return &currentNode.key
+		if currentNode.Key.AuctionID == auctionID {
+			//fmt.Println("The auction is being accessed")
+			return &currentNode.Key
 		}
-		currentNode = currentNode.next
+		currentNode = currentNode.Next
 	}
 	return &Auction{}
 }
 
+func AccessHashAuctionCalling(h *AuctionHashTable, auctionID uint64) *Auction {
+
+	index := HashAuction(auctionID)
+	return h.Array[index].accessLinkedListAuctionCalling(auctionID)
+}
+
+func (b *AuctionLinkedList) accessLinkedListAuctionCalling(auctionID uint64) *Auction { //For checking when updated
+	currentNode := b.Head
+	for currentNode != nil {
+		if currentNode.Key.AuctionID == auctionID {
+			//fmt.Println("The auction is being accessed")
+			return &currentNode.Key
+		}
+		currentNode = currentNode.Next
+	}
+	return &Auction{}
+}
+
+/*
+func AccessHashAuctionFunction(a *AuctionHashTable, auctionID uint64) *Auction {
+
+	index := HashAuction(auctionID)
+	return accessLinkedListAuctionFunction(a, index, auctionID)
+}
+// h.Array[index].accessLinkedListAuction(auctionID)
+func accessLinkedListAuctionFunction(a *AuctionHashTable, index uint64, auctionID uint64) *Auction { //For checking when updated
+	currentNode := a.Array[index].accessLinkedListAuction(auctionID)
+	for currentNode != nil {
+		if currentNode.Key.AuctionID == auctionID {
+			//fmt.Println("The auction is being accessed")
+			return &currentNode.Key
+		}
+		currentNode = currentNode.Next
+	}
+	return &Auction{}
+}
+*/
+
 // A behavior of a hash table object used to delete a user within the table.
 func (h *AuctionHashTable) AuctionHashAccessDelete(aid uint64) bool {
 	index := HashAuction(aid)
-	return h.array[index].deleteAuctionInLinkedList(aid)
+	return h.Array[index].deleteAuctionInLinkedList(aid)
 }
 
 func (b *AuctionLinkedList) deleteAuctionInLinkedList(aid uint64) bool {
 
-	if b.head.key.AuctionID == aid {
-		b.head = b.head.next
+	if b.Head.Key.AuctionID == aid {
+		b.Head = b.Head.Next
 		return true
 	}
-	previousNode := b.head
-	for previousNode.next != nil {
-		if previousNode.next.key.AuctionID == aid {
-			previousNode.next = previousNode.next.next
+	previousNode := b.Head
+	for previousNode.Next != nil {
+		if previousNode.Next.Key.AuctionID == aid {
+			previousNode.Next = previousNode.Next.Next
 			return true
 		}
-		previousNode = previousNode.next
+		previousNode = previousNode.Next
 	}
 	return false
 }
@@ -145,23 +188,25 @@ func (b *AuctionLinkedList) deleteAuctionInLinkedList(aid uint64) bool {
 // A behavior of a hash table object used to search of an auction object within the hash table using auction name of each auction.
 func (h *AuctionHashTable) SearchAuctNameInHash(key Auction) bool {
 	index := HashAuction(key.AuctionID)
-	return h.array[index].searchAuctNameInLinkedList(key)
+	return h.Array[index].searchAuctNameInLinkedList(key)
 }
 
 // Continuation of seachAuctNameHashTable() function to continue the search within the linked list at the hash index location.
 func (b *AuctionLinkedList) searchAuctNameInLinkedList(k Auction) bool { //For checking when updated
-	currentNode := b.head
+	currentNode := b.Head
 	for currentNode != nil {
-		if currentNode.key == k {
+		if currentNode.Key == k {
 			return true
 		}
-		currentNode = currentNode.next
+		currentNode = currentNode.Next
 	}
 	return false
 }
 
-func CreateAuction(auctioneer User, initBid uint64, bidStep uint64, id uint64, duration time.Duration, itemName string) Auction {
-	auction := Auction{
+func CreateAuction(auctioneer User, initBid uint64, bidStep uint64, id uint64, duration time.Duration, itemName string) AuctionReport {
+
+	auction := Auction{}
+	auction = Auction{
 		AuctionID:      id,
 		AuctioneerID:   auctioneer.AccountID,
 		ItemName:       itemName,
@@ -172,45 +217,54 @@ func CreateAuction(auctioneer User, initBid uint64, bidStep uint64, id uint64, d
 		LatestBidTime:  time.Now().Format(time.RFC3339Nano),
 		StartTime:      time.Now().Format(time.RFC3339Nano),
 		EndTime:        time.Now().Add(duration * time.Hour).Format(time.RFC3339Nano),
+		ActionCount:    0,
 	}
-	return auction
+	result := AuctionReport{
+		CreatedAuction: &auction,
+		CreatedID:      id,
+	}
+	return result
 }
 
-func (a *Auction) UpdateAuctionWinner(b Bid) bool {
-	bidtime, err := time.Parse(time.RFC3339Nano, b.BidTime)
-	endtime, err2 := time.Parse(time.RFC3339Nano, a.EndTime)
-	if err != nil || err2 != nil {
-		return false
-	} else {
-		if bidtime.After(endtime) {
-			return false
-		}
-		if (b.BidPrice > a.CurrMaxBid) && (b.BidPrice-a.CurrMaxBid) >= a.BidStep {
-			a.CurrMaxBid = b.BidPrice
-			a.CurrWinnerID = b.BidderID
-			a.LatestBidTime = b.BidTime
-			a.CurrWinnerName = b.BidderUsername
-		}
-		return true
+func (a *Auction) UpdateAuctionWinner(b Bid) string {
+
+	if b.bidTime > a.EndTime {
+		return "The auction has already ended"
 	}
+
+	if (b.bidPrice > a.CurrMaxBid) && (b.bidPrice-a.CurrMaxBid) >= a.BidStep {
+		a.CurrMaxBid = b.bidPrice
+		a.CurrWinnerID = b.bidderID
+		a.LatestBidTime = b.bidTime
+		a.CurrWinnerName = b.bidderUsername
+	}
+
+	time.Sleep(1 * time.Millisecond)
+	report := fmt.Sprint(a.CurrWinnerID) + "is now the winner of auction" + fmt.Sprint(a.AuctionID)
+
+	return report
 }
 
 // Create bidding to be used to update the auction.
 func CreateBid(user User, price uint64, actionTime string) Bid {
+
+	id := rand.Uint64()
 	bid := Bid{}
 	bid = Bid{
-		BidderID:       user.AccountID,
-		BidderUsername: user.Username,
-		BidPrice:       price,
-		BidTime:        actionTime,
+		biddingID:      id,
+		bidderID:       user.AccountID,
+		bidderUsername: user.Username,
+		bidPrice:       price,
+		bidTime:        actionTime,
 	}
 	return bid
 }
 
 // Bid is a datatype used to store bid interactions containing the bidding information.
 type Bid struct {
-	BidderID       uint64
-	BidderUsername string
-	BidPrice       uint64
-	BidTime        string
+	biddingID      uint64
+	bidderID       uint64
+	bidderUsername string
+	bidPrice       uint64
+	bidTime        string
 }
