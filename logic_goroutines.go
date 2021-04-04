@@ -49,34 +49,40 @@ func testingFinal() {
 // 3 Main Functions for business logic usage.
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-func MakeBidMain(u *UserHashTable, h *AuctionHashTable, uid uint64, targetid uint64, placeVal uint64, bidId uint64, db *sql.DB) {
+func MakeBidMain(u *UserHashTable, h *AuctionHashTable, uid uint64, targetid uint64, placeVal uint64, bidId uint64, db *sql.DB) bool {
 	currUser := *u.AccessUserHash(uid)
-	newBid := CreateBid(currUser, placeVal, bidId, time.Now().Format(time.RFC3339Nano))
+	newBid := CreateBid(currUser, placeVal, time.Now().Format(time.RFC3339Nano))
 	target := h.AccessHashAuction(targetid)
 	go InsertBidToDB(newBid, targetid, db)
 	if !target.UpdateAuctionWinner(newBid) {
+		return false
 	} else {
 		go UpdateAuctionInDB(*target, db)
 		go h.AuctionHashAccessUpdate(*target)
+		return true
 	}
 }
 
-func CreateUserMain(h *UserHashTable, uid uint64, name string, db *sql.DB) {
+func CreateUserMain(h *UserHashTable, uid uint64, name string, db *sql.DB) bool {
 	if !h.SearchUserIDHashTable(uid) {
 		newUser := CreateUser("username"+fmt.Sprint(uid), name, uid)
 		go InsertUserToDB(newUser, db)
 		go h.InsertUserToHash(newUser)
+		return true
 	}
+	return false
 }
 
 // Average time to create and store new user into both server-side caching and database is approximately 7.5 ms. ( 0.0075 second )
 // Considering actual networking latencies, inserting the information onto the actual database is approximately 155 ms. ( 0.155 second )
 
-func CreateAuctionMain(U *UserHashTable, A *AuctionHashTable, uid uint64, aid uint64, initial uint64, step uint64, duration time.Duration, itemName string, db *sql.DB) {
+func CreateAuctionMain(U *UserHashTable, A *AuctionHashTable, uid uint64, aid uint64, initial uint64, step uint64, duration time.Duration, itemName string, db *sql.DB) bool {
 	user := U.AccessUserHash(uid)
 	if !A.SearchAuctIDHashTable(aid) {
 		newAuction := CreateAuction(*user, initial, step, aid, duration, itemName)
 		go InsertAuctionToDB(newAuction, db)
 		go A.InsertAuctToHash(&newAuction)
+		return true
 	}
+	return false
 }

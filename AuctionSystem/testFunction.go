@@ -63,7 +63,7 @@ func makeBidMain_test(u *UserHashTable, h *AuctionHashTable, uid uint64, targeti
 	init := time.Now()
 
 	currUser := *u.AccessUserHash(uid)
-	newBid := CreateBid(currUser, placeVal, bidId, time.Now().Format(time.RFC3339Nano))
+	newBid := CreateBid(currUser, placeVal, time.Now().Format(time.RFC3339Nano))
 	target := h.AccessHashAuction(targetid)
 
 	bidResult := make(chan bool)
@@ -181,12 +181,12 @@ func insertBid_test(bid Bid, target uint64, db *sql.DB, result chan bool, taken 
 
 	init := time.Now()
 
-	query, err := db.Prepare("INSERT INTO bid_table VALUES ( ? , ? , ? , ? , ? , ? )")
+	query, err := db.Prepare("INSERT INTO bid_table(BidderId, BidderUsername, BidPrice, BidTime, AuctionID) VALUES ( ? , ? , ? , ? , ? , ? )")
 	if err != nil {
 		panic(err)
 	}
 
-	query.Exec(bid.BiddingID, bid.BidderID, bid.BidderUsername, bid.BidPrice, bid.BidTime, target)
+	query.Exec(bid.BidderID, bid.BidderUsername, bid.BidPrice, bid.BidTime, target)
 	defer query.Close()
 
 	taken <- time.Since(init)

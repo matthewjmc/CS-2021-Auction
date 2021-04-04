@@ -70,7 +70,7 @@ func ServerDatabaseInit() {
 	if debug != nil {
 		fmt.Println(debug.Error())
 	}
-	statement, debug := db.Prepare("CREATE Table user_table( AccountID int UNSIGNED NOT NULL UNIQUE PRIMARY KEY, Username varchar(20) NOT NULL, Fullname varchar(20) NOT NULL )")
+	statement, debug := db.Prepare("CREATE Table user_table( AccountID BIGINT UNSIGNED NOT NULL UNIQUE PRIMARY KEY, Username varchar(40) NOT NULL, Fullname varchar(40) NOT NULL )")
 	if debug != nil {
 		fmt.Println(debug.Error())
 	}
@@ -78,7 +78,7 @@ func ServerDatabaseInit() {
 	if debug != nil {
 		fmt.Println(debug.Error())
 	}
-	statement2, debug := db.Prepare("CREATE Table auction_table( AuctionID int UNSIGNED NOT NULL UNIQUE PRIMARY KEY,AuctioneerID int UNSIGNED NOT NULL,ItemName varchar(30) NOT NULL, CurrWinnerID int UNSIGNED NOT NULL, CurrWinnerName varchar(30), CurrMaxBid int UNSIGNED NOT NULL, BidStep int UNSIGNED NOT NULL, LatestBidTime varchar(50) NOT NULL, StartTime varchar(50) NOT NULL, EndTime varchar(50) NOT NULL, FOREIGN KEY (AuctioneerID) references user_table(AccountID), FOREIGN KEY (CurrWinnerID) references user_table(AccountID))")
+	statement2, debug := db.Prepare("CREATE Table auction_table( AuctionID BIGINT UNSIGNED NOT NULL UNIQUE PRIMARY KEY, AuctioneerID BIGINT UNSIGNED NOT NULL , ItemName varchar(40) NOT NULL, CurrWinnerID BIGINT UNSIGNED NOT NULL, CurrWinnerName varchar(40), CurrMaxBid BIGINT UNSIGNED NOT NULL, BidStep BIGINT UNSIGNED NOT NULL, LatestBidTime varchar(50) NOT NULL, StartTime varchar(50) NOT NULL, EndTime varchar(50) NOT NULL)")
 	if debug != nil {
 		fmt.Println(debug.Error())
 	}
@@ -86,7 +86,7 @@ func ServerDatabaseInit() {
 	if debug != nil {
 		fmt.Println(debug.Error())
 	}
-	statement3, debug := db.Prepare("CREATE Table bid_table( BiddingID int UNSIGNED NOT NULL UNIQUE PRIMARY KEY, BidderID int UNSIGNED NOT NULL, BidderUsername varchar(30) NOT NULL, BidPrice int UNSIGNED NOT NULL, BidTime varchar(50) NOT NULL , AuctionID int UNSIGNED NOT NULL, FOREIGN KEY (BidderID) REFERENCES user_table(AccountID), FOREIGN KEY (AuctionID) references auction_table(AuctionID) );")
+	statement3, debug := db.Prepare("CREATE Table bid_table( BiddingID BIGINT AUTO_INCREMENT UNSIGNED NOT NULL UNIQUE PRIMARY KEY, BidderID BIGINT UNSIGNED NOT NULL, BidderUsername varchar(40) NOT NULL, BidPrice BIGINT UNSIGNED NOT NULL, BidTime varchar(50) NOT NULL , AuctionID BIGINT UNSIGNED NOT NULL)")
 	if debug != nil {
 		fmt.Println(debug.Error())
 	}
@@ -138,12 +138,12 @@ func InsertUserToDB(user User, db *sql.DB) bool {
 
 func InsertBidToDB(bid Bid, target uint64, db *sql.DB) bool {
 
-	query, err := db.Prepare("INSERT INTO bid_table VALUES ( ? , ? , ? , ? , ? , ? )")
+	query, err := db.Prepare("INSERT INTO bid_table(BidderID,BidderUsername,BidPrice,BidTime,AuctionID) VALUES ( ? , ? , ? , ? , ? )")
 	if err != nil {
 		panic(err)
 	}
 
-	query.Exec(bid.BiddingID, bid.BidderID, bid.BidderUsername, bid.BidPrice, bid.BidTime, target)
+	query.Exec(bid.BidderID, bid.BidderUsername, bid.BidPrice, bid.BidTime, target)
 	defer query.Close()
 
 	return true

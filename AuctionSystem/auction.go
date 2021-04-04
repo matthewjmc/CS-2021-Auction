@@ -196,10 +196,9 @@ func (a *Auction) UpdateAuctionWinner(b Bid) bool {
 }
 
 // Create bidding to be used to update the auction.
-func CreateBid(user User, price uint64, bidId uint64, actionTime string) Bid {
+func CreateBid(user User, price uint64, actionTime string) Bid {
 	bid := Bid{}
 	bid = Bid{
-		BiddingID:      bidId,
 		BidderID:       user.AccountID,
 		BidderUsername: user.Username,
 		BidPrice:       price,
@@ -210,7 +209,6 @@ func CreateBid(user User, price uint64, bidId uint64, actionTime string) Bid {
 
 // Bid is a datatype used to store bid interactions containing the bidding information.
 type Bid struct {
-	BiddingID      uint64
 	BidderID       uint64
 	BidderUsername string
 	BidPrice       uint64
