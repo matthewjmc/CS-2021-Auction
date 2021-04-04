@@ -1,12 +1,13 @@
 package load_balance
 
-// Cache for auctionID with address for that specific auction.
-
 import (
+	"crypto/rand"
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"log"
 	"strconv"
+	"time"
 
 	rv "load_balance/reverseproxy"
 
@@ -45,7 +46,7 @@ func CommandFunction(cmd rv.Package) (string, rv.Package) {
 // set auctionID or key to auction struct input
 func SetKey(key string, value interface{}) (key1 string) {
 	client := redis.NewClient(&redis.Options{
-		Addr:     "localhost: 6379",
+		Addr:     "10.104.0.11: 80",
 		Password: "",
 		DB:       0,
 	})
@@ -60,23 +61,34 @@ func SetKey(key string, value interface{}) (key1 string) {
 	return key
 }
 
-// append new key to redis and lock the ip addr for that key
-// pass the key into the package to send over to backend
+func getToken() uint64 {
+	randomBytes := make([]byte, 32)
+	_, err := rand.Read(randomBytes)
+	if err != nil {
+		panic(err)
+	}
+	data := binary.BigEndian.Uint64(randomBytes) * uint64(time.Now().Unix())
+	return data
+}
+
+// return new key to matthew's side (client) and lock the ip addr for that key
 func KeyGen(init rv.Package) (key string, data rv.Package) {
 	client := redis.NewClient(&redis.Options{
-		Addr:     "localhost: 6379",
+		Addr:     "10.104.0.11: 80",
 		Password: "",
 		DB:       0,
 	})
-	temp, err := client.Keys("*").Result()
-	if err != nil {
-		fmt.Println(err)
-	}
-	var count = len(temp)
-	//fmt.Println(count)
-	var newkey = count + 1
-	key1 := strconv.Itoa(newkey)
-	//fmt.Println(key1, reflect.TypeOf(key1))
+	// temp, err := client.Keys("*").Result()
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
+	// var count = len(temp)
+	// //fmt.Println(count)
+	// var newkey = count + 1
+	// key1 := strconv.Itoa(newkey)
+	// //fmt.Println(key1, reflect.TypeOf(key1))
+	newkey := getToken()
+	key1 := strconv.FormatUint(newkey, 10)
 
 	S1, err := client.Get("1").Result()
 	if err != nil {
@@ -94,6 +106,7 @@ func KeyGen(init rv.Package) (key string, data rv.Package) {
 
 	//set IP address to that key
 	if S1_Usage > S2_Usage {
+		//fmt.Println("IF")
 		value.AddressIP = "10.104.0.9:19530"
 		value.ConnectedClients = 0
 		entry, err := json.Marshal(value)
@@ -105,6 +118,7 @@ func KeyGen(init rv.Package) (key string, data rv.Package) {
 			fmt.Println(err)
 		}
 	} else if S2_Usage > S1_Usage {
+		//fmt.Println("ELSEIF")
 		value.AddressIP = "10.104.0.8:19530"
 		value.ConnectedClients = 0
 		entry, err := json.Marshal(value)
@@ -116,6 +130,7 @@ func KeyGen(init rv.Package) (key string, data rv.Package) {
 			fmt.Println(err)
 		}
 	} else {
+		//fmt.Println("Else")
 		value.AddressIP = "10.104.0.9:19530"
 		value.ConnectedClients = 0
 		entry, err := json.Marshal(value)
@@ -128,18 +143,21 @@ func KeyGen(init rv.Package) (key string, data rv.Package) {
 		}
 	}
 
+	//fmt.Println(value.AddressIP)
 	client.Close()
-	init.Data.Value = uint64(newkey)
+	init.Data.Value = newkey
+	//fmt.Println(uint64(newkey))
+	//go rv.ReProx(Inconn, value.AddressIP, init)
 	if err != nil {
 		fmt.Println(err)
 	}
 	return value.AddressIP, init
 }
 
-// get package and addr to pass to reverse proxy
+// get addr to send to nonthicha reverse proxy
 func RequestConnection(key string, init rv.Package) (string, rv.Package) { //(ip string)
 	client := redis.NewClient(&redis.Options{
-		Addr:     "localhost: 6379",
+		Addr:     "10.104.0.11: 80",
 		Password: "",
 		DB:       0,
 	})
@@ -153,17 +171,22 @@ func RequestConnection(key string, init rv.Package) (string, rv.Package) { //(ip
 	if err != nil {
 		log.Fatal(err)
 	}
+	//fmt.Println(src.AddressIP)
 	client.Close()
+	//rv.ReProx(Inconn, src.AddressIP, init)
 	if err != nil {
 		fmt.Println(err)
 	}
 	return src.AddressIP, init
+	// Inconn.Close()
+	//fmt.Println("done")
+	//return src.AddressIP
 }
 
 // update numbers of connected users and pass to reverse proxy
 func UpdateConnections(id string) (user int) {
 	client := redis.NewClient(&redis.Options{
-		Addr:     "localhost: 6379",
+		Addr:     "10.104.0.11: 80",
 		Password: "",
 		DB:       0,
 	})
@@ -188,7 +211,7 @@ func UpdateConnections(id string) (user int) {
 // return all auctionID
 func getAllAuctionID() (val []string) {
 	client := redis.NewClient(&redis.Options{
-		Addr:     "localhost: 6379",
+		Addr:     "10.104.0.11: 80",
 		Password: "",
 		DB:       0,
 	})
@@ -203,7 +226,7 @@ func getAllAuctionID() (val []string) {
 // delete auction from command and key
 func deleteAuction(c Client, key string) bool {
 	client := redis.NewClient(&redis.Options{
-		Addr:     "localhost: 6379",
+		Addr:     "10.104.0.11: 80",
 		Password: "",
 		DB:       0,
 	})
