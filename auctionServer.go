@@ -81,16 +81,17 @@ func requestHandle(con net.Conn, wg *sync.WaitGroup, db *sql.DB) { //Check make 
 	for {
 		n, err := con.Read(buffer)
 		rawdata := string(buffer[:n])
-
 		if err != nil {
 			fmt.Println(err)
 		}
+
 		json.Unmarshal([]byte(rawdata), &received)
 
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
+
 		if received.Command == "create" {
 			//aucID := _generateAucID()
 			aucID := received.Data.Value
@@ -122,6 +123,9 @@ func requestHandle(con net.Conn, wg *sync.WaitGroup, db *sql.DB) { //Check make 
 				loggedIn = true
 				tmp := Package{}
 				tmp.Command = "Success"
+				//tmp.Time = append(received.Time, time.Now()) //test join time
+				//tmp.Time = append(received.Time) //test join round time
+
 				var jsonData []byte
 				jsonData, err = json.Marshal(tmp)
 				returnData(con, string(jsonData))
@@ -153,14 +157,12 @@ func addUsr(con net.Conn, aID uint64, uID uint64) {
 		temp := hashTable[aID]
 		temp.ConnectedClients = append(temp.ConnectedClients, con)
 		hashTable[aID] = temp
-		//fmt.Println(hashTable[aID])
 	} else {
 		temp := Auction{
 			AuctionID:        aID,
 			ConnectedClients: []net.Conn{con},
 		}
 		hashTable[aID] = temp
-		//fmt.Println(hashTable[aID])
 	}
 	fmt.Println("Number of Rooms Currently", len(hashTable))
 }
