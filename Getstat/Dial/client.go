@@ -1,7 +1,6 @@
 package main
 
-// Locate on the load balance to continuously get free CPU usage percentage and store in redis
-// for faster retrieve each time the user use create command
+// Locate on the load balance
 
 import (
 	"bufio"
@@ -19,6 +18,7 @@ type Data struct {
 	Usage float64
 }
 
+var S1_Usage, S2_Usage float64
 var Usage float64
 
 func main() {
@@ -30,7 +30,7 @@ func main() {
 	//for {
 	//fmt.Println("top")
 	go GetStat(ln1)
-	fmt.Println("Getstat")
+	fmt.Println("Start Getstat")
 	GetStat(ln2)
 	//fmt.Println("Bottom")
 	//}
@@ -38,16 +38,35 @@ func main() {
 
 }
 
+// update numbers of connected users and pass to reverse proxy
+// func UpdateUsage(id string, value float64) {
+// 	client := redis.NewClient(&redis.Options{
+// 		Addr:     "localhost: 6379",
+// 		Password: "",
+// 		DB:       0,
+// 	})
+// 	val, err := client.Get(id).Result()
+// 	if err != nil {
+// 		fmt.Println(err)
+// 	}
+// 	src := Data{}
+// 	err = json.Unmarshal([]byte(val), &src)
+// 	newval := value
+// 	entry, err := json.Marshal(newval)
+// 	client.Set(id, entry, 0)
+// 	client.Close()
+// }
+
 func GetStat(conn net.Conn) {
 	defer conn.Close()
 	client := redis.NewClient(&redis.Options{
-		Addr:     "localhost: 6379",
+		Addr:     "10.104.0.11: 80",
 		Password: "",
 		DB:       0,
 	})
 	defer client.Close()
 	for {
-		fmt.Println("Test")
+		//fmt.Println("Test")
 		netData, err := bufio.NewReader(conn).ReadString('\n')
 		if err != nil {
 			fmt.Println(err)
@@ -57,7 +76,7 @@ func GetStat(conn net.Conn) {
 		}
 
 		usage := string(netData)
-		fmt.Println(usage)
+		//fmt.Println(usage)
 		if usage[12] == 116 {
 			re := regexp.MustCompile(`[-]?\d[\d,]*[\.]?[\d{2}]*`)
 			submatchall := re.FindAllString(usage, -1)
@@ -105,7 +124,7 @@ func GetStat(conn net.Conn) {
 				client.Set("1", entry, 0)
 			}
 		}
-		fmt.Println(Usage)
+		//fmt.Println(Usage)
 		// t := time.Now()
 		// myTime := t.Format(time.RFC3339) + "\n"
 		// conn.Write([]byte(myTime))
