@@ -1,7 +1,7 @@
 package main
 
 import (
-	//"bufio"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -38,14 +38,17 @@ type Auction struct { //Auctions Running at one time
 var A = AuctionSystem.AuctionAllocate()
 var U = AuctionSystem.UserAllocate()
 
+const Server_init string = "auction:Helloworld1@tcp(db.mcmullin.org)/"
+const Server_conn string = "auction:Helloworld1@tcp(db.mcmullin.org)/auction_system"
+
 var hashTable = make(map[uint64]Auction) //Hash Table to Storing Current Auction Data
 
 func main() {
+	AuctionSystem.ServerDatabaseInit()
 	serverInit()
 }
 
 func serverInit() {
-
 	var wg sync.WaitGroup                       //Ensure Data Integrity
 	stream, err := net.Listen("tcp4", ":19530") //Listen at port 19530
 	if err != nil {
@@ -53,7 +56,10 @@ func serverInit() {
 		return
 	}
 	defer stream.Close()
-	n := 1
+	db, err := sql.Open("mysql", Server_conn)
+	if err != nil {
+		panic(err.Error())
+	}
 	for {
 		con, err := stream.Accept()
 		//fmt.Println(con.RemoteAddr())
@@ -62,13 +68,12 @@ func serverInit() {
 			return
 		}
 		wg.Add(1)
-		go requestHandle(con, &wg)
-		n++
+		go requestHandle(con, &wg, db)
 		wg.Wait()
 	}
 }
 
-func requestHandle(con net.Conn, wg *sync.WaitGroup) { //Check make Sure other thread does not RW Same Data
+func requestHandle(con net.Conn, wg *sync.WaitGroup, db *sql.DB) { //Check make Sure other thread does not RW Same Data
 	var loggedIn bool = false //Check if User has been registered
 	var received Package      //Data Received From User to be decoded to Struct
 	defer con.Close()
@@ -76,23 +81,29 @@ func requestHandle(con net.Conn, wg *sync.WaitGroup) { //Check make Sure other t
 	for {
 		n, err := con.Read(buffer)
 		rawdata := string(buffer[:n])
-		//rawdata, err := bufio.NewReader(con).ReadString('\n')
+
 		if err != nil {
 			fmt.Println(err)
 		}
 		json.Unmarshal([]byte(rawdata), &received)
+
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
 		if received.Command == "create" {
-			aucID := _generateAucID()
-			state, _ := AuctionSystem.CreateAuctionMain(U, A, received.UserID, aucID, 100, 25, 1*time.Hour, "Demo")
+			//aucID := _generateAucID()
+			aucID := received.Data.Value
+			//state := _aucExists(aucID)
+			state := true
+			//fmt.Println(time.Since(received.Time[0]))
 			if state {
+				AuctionSystem.CreateAuctionMain(U, A, received.UserID, aucID, uint64(100), uint64(25), 1*time.Hour, "Demo", db)
 				tmp := Package{}
 				tmp.Data.Item = "AuctionID"
 				tmp.Data.Value = aucID
 				tmp.Command = "AucCreated"
+				tmp.Time = received.Time
 				var jsonData []byte
 				jsonData, err = json.Marshal(tmp)
 				returnData(con, string(jsonData))
@@ -102,7 +113,8 @@ func requestHandle(con net.Conn, wg *sync.WaitGroup) { //Check make Sure other t
 			}
 
 		} else if !loggedIn && received.Command == "join" {
-			state, _ := AuctionSystem.CreateUserMain(U, received.UserID, "Demo")
+			state := AuctionSystem.CreateUserMain(U, received.UserID, "Demo", db)
+			//fmt.Println("join")
 			defer removeUser(con, received.AuctionID)
 			if state {
 				addUsr(con, received.AuctionID, received.UserID)
@@ -121,17 +133,12 @@ func requestHandle(con net.Conn, wg *sync.WaitGroup) { //Check make Sure other t
 		} else if loggedIn {
 			switch received.Command {
 			case "bid":
-				state, err := AuctionSystem.MakeBidMain(U, A, received.UserID, received.AuctionID, received.Data.Value)
-				if err != 0 {
-					switch err {
-					case 1:
-						fmt.Println("User not found in System")
-					case 2:
-						fmt.Println("Auction Not Found in System")
-					}
-				} else if state {
+				if AuctionSystem.MakeBidMain(U, A, received.UserID, received.AuctionID, received.Data.Value, db) {
 					go _updateClient(received.AuctionID, received.UserID, received.Data.Value, received.Time)
+				} else {
+					fmt.Println("Unable to do the bid.")
 				}
+
 			}
 		}
 	}

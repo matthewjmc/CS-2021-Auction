@@ -10,13 +10,13 @@ const ArraySize = 1000
 
 // User contains a user's information for every other implementation.
 type User struct {
+	AccountID uint64
 	Username  string
 	Fullname  string
-	AccountID uint64
 }
 
 type UserHashTable struct {
-	Array [ArraySize]*UserLinkedList
+	Array [1000]*UserLinkedList
 }
 
 type UserLinkedList struct {
@@ -33,20 +33,21 @@ func HashUser(uid uint64) uint64 {
 }
 
 // A behavior of a hash table object used to insert a user into a hash function to properly placed it at the correct index.
-func (h *UserHashTable) InsertUserToHash(user User) {
+func (h *UserHashTable) InsertUserToHash(user User) bool {
 	index := HashUser(user.AccountID)
-	h.Array[index].insertUserToLinkedList(user)
+	return h.Array[index].insertUserToLinkedList(user)
 }
 
 // Continuation of hash function insertion to place it within a linked list as a node.
-func (b *UserLinkedList) insertUserToLinkedList(User User) {
+func (b *UserLinkedList) insertUserToLinkedList(User User) bool {
 	if !b.searchUserIDLinkedList(User.AccountID) {
 		newNode := &UserNode{Key: User}
 		newNode.Next = b.Head
 		b.Head = newNode
 		//fmt.Println(k)
+		return true
 	} else {
-		//fmt.Println(k, "already exists")
+		return false
 	}
 }
 
@@ -65,7 +66,7 @@ func (b *UserLinkedList) searchUserIDLinkedList(uid uint64) bool { //For search 
 		}
 		currentNode = currentNode.Next
 	}
-	//fmt.Println("There is no user with that ID in the memory.")
+	//fmt.Println("There is no auction with that ID in the memory.")
 	return false
 }
 
