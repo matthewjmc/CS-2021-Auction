@@ -5,24 +5,13 @@ There will be two parts for this branch. First, server-side caching and auctioni
 
 =====================================================================================================================================================
 
-These functions below are the core of the server's process which returns boolean and uint64 as reporting error codes.
+These functions below are the core of the server's process which returns boolean and corresponding data from each functions namely User, Auction and Bid.
 
 #### MakeBidMain(u *UserHashTable, h *AuctionHashTable, uid uint64, targetid uint64, placeVal uint64).
-: MakeBidMain is called when the "command" is "bid".
-: code 0 . the bid has been made and updated properly, also returning "true".
-: code 1 , the user has not been found within the system, also returning "false".
-: code 2 , the auction has not been found within the system, also returning "false".
-: code 3 , the auction has not been updated due to losing conditions, also returning "false".
 
 #### CreateUserMain(h *UserHashTable, uid uint64, name string).
-: createUserMain is called when the "command" is "User" or "user".
-: code 0 , the user has not been found within the system, creating new user object while also returning "true".
-: code 1 , the user has been found in the system, also returning "false".
 
 #### CreateAuctionMain(U *UserHashTable, A *AuctionHashTable, uid uint64, aid uint64, initial uint64, step uint64, duration time.Duration, itemName string). 
-: createAuctionMain is called when the "command" is "Auction" or "auction".
-: code 0, auction has not been found within the system, creating new auction object while also returning "true".
-: code 1 , auction has been found in the system, also returning "false".
 
 =====================================================================================================================================================
 

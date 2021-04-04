@@ -49,40 +49,37 @@ func testingFinal() {
 // 3 Main Functions for business logic usage.
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-func MakeBidMain(u *UserHashTable, h *AuctionHashTable, uid uint64, targetid uint64, placeVal uint64, bidId uint64, db *sql.DB) bool {
+func MakeBidMain(u *UserHashTable, h *AuctionHashTable, uid uint64, targetid uint64, placeVal uint64, bidId uint64, db *sql.DB) (bool, Auction, Bid) {
 	currUser := *u.AccessUserHash(uid)
 	newBid := CreateBid(currUser, placeVal, time.Now().Format(time.RFC3339Nano))
 	target := h.AccessHashAuction(targetid)
 	go InsertBidToDB(newBid, targetid, db)
 	if !target.UpdateAuctionWinner(newBid) {
-		return false
+		return false, *target, newBid
 	} else {
 		go UpdateAuctionInDB(*target, db)
 		go h.AuctionHashAccessUpdate(*target)
-		return true
+		return true, *target, newBid
 	}
 }
 
-func CreateUserMain(h *UserHashTable, uid uint64, name string, db *sql.DB) bool {
+func CreateUserMain(h *UserHashTable, uid uint64, name string, db *sql.DB) (bool, User) {
 	if !h.SearchUserIDHashTable(uid) {
 		newUser := CreateUser("username"+fmt.Sprint(uid), name, uid)
 		go InsertUserToDB(newUser, db)
 		go h.InsertUserToHash(newUser)
-		return true
+		return true, newUser
 	}
-	return false
+	return false, User{}
 }
 
-// Average time to create and store new user into both server-side caching and database is approximately 7.5 ms. ( 0.0075 second )
-// Considering actual networking latencies, inserting the information onto the actual database is approximately 155 ms. ( 0.155 second )
-
-func CreateAuctionMain(U *UserHashTable, A *AuctionHashTable, uid uint64, aid uint64, initial uint64, step uint64, duration time.Duration, itemName string, db *sql.DB) bool {
+func CreateAuctionMain(U *UserHashTable, A *AuctionHashTable, uid uint64, aid uint64, initial uint64, step uint64, duration time.Duration, itemName string, db *sql.DB) (bool, Auction) {
 	user := U.AccessUserHash(uid)
 	if !A.SearchAuctIDHashTable(aid) {
 		newAuction := CreateAuction(*user, initial, step, aid, duration, itemName)
 		go InsertAuctionToDB(newAuction, db)
 		go A.InsertAuctToHash(&newAuction)
-		return true
+		return true, newAuction
 	}
-	return false
+	return false, Auction{}
 }
