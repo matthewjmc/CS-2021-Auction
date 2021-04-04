@@ -62,6 +62,7 @@ func serverInit() {
 			return
 		}
 		wg.Add(1)
+		//fmt.Println(n)
 		go requestHandle(con, &wg)
 		n++
 		wg.Wait()
@@ -76,23 +77,31 @@ func requestHandle(con net.Conn, wg *sync.WaitGroup) { //Check make Sure other t
 	for {
 		n, err := con.Read(buffer)
 		rawdata := string(buffer[:n])
-		//rawdata, err := bufio.NewReader(con).ReadString('\n')
 		if err != nil {
 			fmt.Println(err)
 		}
+
 		json.Unmarshal([]byte(rawdata), &received)
+
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
+
 		if received.Command == "create" {
-			aucID := _generateAucID()
+			aucID := received.Data.Value
+			//aucID := _generateAucID()
 			state, _ := AuctionSystem.CreateAuctionMain(U, A, received.UserID, aucID, 100, 25, 1*time.Hour, "Demo")
+			// fmt.Println(received.Time)
+			// fmt.Println(received)
 			if state {
 				tmp := Package{}
 				tmp.Data.Item = "AuctionID"
 				tmp.Data.Value = aucID
 				tmp.Command = "AucCreated"
+
+				tmp.Time = received.Time
+
 				var jsonData []byte
 				jsonData, err = json.Marshal(tmp)
 				returnData(con, string(jsonData))
@@ -110,6 +119,9 @@ func requestHandle(con net.Conn, wg *sync.WaitGroup) { //Check make Sure other t
 				loggedIn = true
 				tmp := Package{}
 				tmp.Command = "Success"
+				//tmp.Time = append(received.Time, time.Now()) //test join time
+				//tmp.Time = append(received.Time) //test join round time
+
 				var jsonData []byte
 				jsonData, err = json.Marshal(tmp)
 				returnData(con, string(jsonData))
@@ -146,14 +158,12 @@ func addUsr(con net.Conn, aID uint64, uID uint64) {
 		temp := hashTable[aID]
 		temp.ConnectedClients = append(temp.ConnectedClients, con)
 		hashTable[aID] = temp
-		//fmt.Println(hashTable[aID])
 	} else {
 		temp := Auction{
 			AuctionID:        aID,
 			ConnectedClients: []net.Conn{con},
 		}
 		hashTable[aID] = temp
-		//fmt.Println(hashTable[aID])
 	}
 	fmt.Println("Number of Rooms Currently", len(hashTable))
 }
