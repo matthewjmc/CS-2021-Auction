@@ -7,6 +7,7 @@ import (
 	"net"
 	"sync"
 
+	//"time"
 	rd "load_balance/redis"
 	rv "load_balance/reverseproxy"
 )
@@ -22,6 +23,8 @@ func main() {
 	n := 1
 	for {
 		con, err := stream.Accept()
+		//Bench test load to sever
+
 		if err != nil {
 			log.Println(err)
 			return
@@ -54,7 +57,10 @@ func handleConnection(con net.Conn, wg *sync.WaitGroup) {
 	//fmt.Println(received)
 	// fmt.Println(reflect.TypeOf(received))
 	IP, Init := rd.CommandFunction(received)
+
 	wg.Done()
+	//Init.Time = append([]time.Time{time.Now()})
+	//fmt.Println(Init)
 	rv.ReProx(con, IP, Init)
 	//fmt.Println("end")
 }
