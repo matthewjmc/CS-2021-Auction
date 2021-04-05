@@ -1,138 +1,133 @@
 package main
 
+// Locate on the load balance
+
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
-	"io"
 	"net"
-	"os"
+	"regexp"
 	"strconv"
 	"strings"
-	"time"
-	"unicode"
+
+	"github.com/go-redis/redis"
 )
 
-// locate on S1 and S2 to get CPUusage that is free in percentage to compare
+type Data struct {
+	Usage float64
+}
+
+var S1_Usage, S2_Usage float64
+var Usage float64
+
 func main() {
-	for {
-		ln, err := net.Listen("tcp4", ":19530")
-		if err != nil {
-			fmt.Println(err)
-		}
-		//defer conn.Close()
-		for {
-			conn, err := ln.Accept()
-			if err != nil {
-				fmt.Println(err)
-			}
-			data := Usage()
-			// reader := bufio.NewReader(data)
-			// fmt.Print(">> ")
-			// text, _ := reader.ReadString('\n')
-			fmt.Fprintf(conn, "From server two:"+data+"\n")
-
-			message, _ := bufio.NewReader(conn).ReadString('\n')
-			fmt.Print("->: " + message)
-			if strings.TrimSpace(string(data)) == "STOP" {
-				fmt.Println("TCP client exiting...")
-				return
-			}
-			time.Sleep(5 * time.Second)
-		}
-	}
-}
-
-func Usage() (data string) {
-	before := collectCPUStats()
-
-	time.Sleep(time.Duration(1) * time.Second)
-	after := collectCPUStats()
-
-	total := float64(after.Total - before.Total)
-	idle := float64(after.Idle-before.Idle) / total * 100
-	fmt.Println("cpu idle:", idle)
-
-	vs := strconv.FormatFloat(float64(idle), 'f', 2, 64)
-	send := []byte(`"` + vs + `"`)
-	fmt.Println(send)
-	return vs
-}
-
-// Stats represents cpu statistics for linux
-type Stats struct {
-	User      uint64
-	Nice      uint64
-	System    uint64
-	Idle      uint64
-	Iowait    uint64
-	Irq       uint64
-	Softirq   uint64
-	Steal     uint64
-	Guest     uint64
-	GuestNice uint64
-	Total     uint64
-	CPUCount  int
-	StatCount int
-}
-
-type cpuStat struct {
-	name string
-	ptr  *uint64
-}
-
-func collectCPUStats() *Stats {
-	file, err := os.Open("/proc/stat")
+	ln1, err := net.Dial("tcp4", "com1.mcmullin.org:20001")
+	ln2, err := net.Dial("tcp4", "com2.mcmullin.org:20001")
 	if err != nil {
 		fmt.Println(err)
 	}
-	defer file.Close()
-	out := io.Reader(file)
-	scanner := bufio.NewScanner(out)
-	var cpu Stats
+	//for {
+	//fmt.Println("top")
+	go GetStat(ln1)
+	fmt.Println("Start Getstat")
+	GetStat(ln2)
+	//fmt.Println("Bottom")
+	//}
+	//time.Sleep(1000 * time.Second)
 
-	cpuStats := []cpuStat{
-		{"user", &cpu.User},
-		{"nice", &cpu.Nice},
-		{"system", &cpu.System},
-		{"idle", &cpu.Idle},
-		{"iowait", &cpu.Iowait},
-		{"irq", &cpu.Irq},
-		{"softirq", &cpu.Softirq},
-		{"steal", &cpu.Steal},
-		{"guest", &cpu.Guest},
-		{"guest_nice", &cpu.GuestNice},
-	}
+}
 
-	if !scanner.Scan() {
-		fmt.Println("failed to scan /proc/stat")
-	}
+// update numbers of connected users and pass to reverse proxy
+// func UpdateUsage(id string, value float64) {
+// 	client := redis.NewClient(&redis.Options{
+// 		Addr:     "localhost: 6379",
+// 		Password: "",
+// 		DB:       0,
+// 	})
+// 	val, err := client.Get(id).Result()
+// 	if err != nil {
+// 		fmt.Println(err)
+// 	}
+// 	src := Data{}
+// 	err = json.Unmarshal([]byte(val), &src)
+// 	newval := value
+// 	entry, err := json.Marshal(newval)
+// 	client.Set(id, entry, 0)
+// 	client.Close()
+// }
 
-	valStrs := strings.Fields(scanner.Text())[1:]
-	cpu.StatCount = len(valStrs)
-	for i, valStr := range valStrs {
-		val, err := strconv.ParseUint(valStr, 10, 64)
+func GetStat(conn net.Conn) {
+	defer conn.Close()
+	client := redis.NewClient(&redis.Options{
+		Addr:     "10.104.0.11: 80",
+		Password: "",
+		DB:       0,
+	})
+	defer client.Close()
+	for {
+		//fmt.Println("Test")
+		netData, err := bufio.NewReader(conn).ReadString('\n')
 		if err != nil {
-			fmt.Println("failed to scan", cpuStats[i].name)
+			fmt.Println(err)
 		}
-		*cpuStats[i].ptr = val
-		cpu.Total += val
-	}
-
-	// Since cpustat[CPUTIME_USER] includes cpustat[CPUTIME_GUEST], subtract the duplicated values from total.
-	// https://github.com/torvalds/linux/blob/4ec9f7a18/kernel/sched/cputime.c#L151-L158
-	cpu.Total -= cpu.Guest
-	// cpustat[CPUTIME_NICE] includes cpustat[CPUTIME_GUEST_NICE]
-	cpu.Total -= cpu.GuestNice
-
-	for scanner.Scan() {
-		line := scanner.Text()
-		if strings.HasPrefix(line, "cpu") && unicode.IsDigit(rune(line[3])) {
-			cpu.CPUCount++
+		if strings.TrimSpace(string(netData)) == "STOP" {
+			fmt.Println("Exiting TCP server!")
 		}
-	}
-	if err := scanner.Err(); err != nil {
-		fmt.Println("scan error for /proc/stat:", err)
+
+		usage := string(netData)
+		//fmt.Println(usage)
+		if usage[12] == 116 {
+			re := regexp.MustCompile(`[-]?\d[\d,]*[\.]?[\d{2}]*`)
+			submatchall := re.FindAllString(usage, -1)
+			for _, element := range submatchall {
+				S2temp := element
+				S2_Usage_temp, err := strconv.ParseFloat(S2temp, 64)
+				if err != nil {
+					fmt.Println(err)
+				}
+				fmt.Println(S2_Usage_temp)
+				Usage = S2_Usage_temp
+
+				val, err := client.Get("2").Result()
+				if err != nil {
+					fmt.Println(err)
+				}
+				src := Data{}
+				err = json.Unmarshal([]byte(val), &src)
+
+				entry, err := json.Marshal(Usage)
+				client.Set("2", entry, 0)
+			}
+			// fmt.Println(Usage)
+		}
+		if usage[12] == 111 {
+			re := regexp.MustCompile(`[-]?\d[\d,]*[\.]?[\d{2}]*`)
+			submatchall := re.FindAllString(usage, -1)
+			for _, element := range submatchall {
+				S1temp := element
+				S1_Usage_temp, err := strconv.ParseFloat(S1temp, 64)
+				if err != nil {
+					fmt.Println(err)
+				}
+				fmt.Println(S1_Usage_temp)
+				Usage = S1_Usage_temp
+
+				val, err := client.Get("1").Result()
+				if err != nil {
+					fmt.Println(err)
+				}
+				src := Data{}
+				err = json.Unmarshal([]byte(val), &src)
+
+				entry, err := json.Marshal(Usage)
+				client.Set("1", entry, 0)
+			}
+		}
+		//fmt.Println(Usage)
+		// t := time.Now()
+		// myTime := t.Format(time.RFC3339) + "\n"
+		// conn.Write([]byte(myTime))
 	}
 
-	return &cpu
 }
