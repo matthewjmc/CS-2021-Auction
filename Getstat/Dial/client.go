@@ -1,6 +1,7 @@
 package main
 
 // Locate on the load balance
+// Changed and remove from the load balance to reduce time needed for the query and insert
 
 import (
 	"bufio"
