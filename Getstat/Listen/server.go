@@ -1,33 +1,45 @@
 package main
 
-// Locate on backend servers 1 and 2 to get cpu stat and send to load balance when called.
+// Locate on backend servers 1 and 2 to get cpu stat and send to the redis directly without
+// passing the load balancer to reduce latency
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"io"
-	"net"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 	"unicode"
+
+	"github.com/go-redis/redis"
 )
 
+type Data struct {
+	Usage float64
+}
+
 func main() {
-	ln, err := net.Listen("tcp4", ":20001")
-	conn, err := ln.Accept()
-	if err != nil {
-		fmt.Println(err)
-	}
-	defer ln.Close()
+	client := redis.NewClient(&redis.Options{
+		Addr:     "10.104.0.11: 80",
+		Password: "",
+		DB:       0,
+	})
+	defer client.Close()
 	for {
+		data := Usage()
+		fmt.Println(data)
+		val, err := client.Get("1").Result()
 		if err != nil {
 			fmt.Println(err)
 		}
-		data := Usage()
-		fmt.Fprintf(conn, "From server one:"+data+"\n")
+		src := Data{}
+		err = json.Unmarshal([]byte(val), &src)
 
+		entry, err := json.Marshal(data)
+		client.Set("1", entry, 0)
 	}
 
 }
@@ -35,20 +47,18 @@ func main() {
 func Usage() (data string) {
 	before := collectCPUStats()
 
-	time.Sleep(time.Duration(1) * time.Second)
+	time.Sleep(time.Duration(30) * time.Millisecond)
 	after := collectCPUStats()
 
 	total := float64(after.Total - before.Total)
 	idle := float64(after.Idle-before.Idle) / total * 100
-	fmt.Println("cpu idle:", idle)
 
 	vs := strconv.FormatFloat(float64(idle), 'f', 2, 64)
-	send := []byte(`"` + vs + `"`)
-	fmt.Println(send)
+	fmt.Println("cpu idle:", vs)
 	return vs
 }
 
-// Stats = cpu statistics for linux
+// Stats represents cpu statistics for linux
 type Stats struct {
 	User      uint64
 	Nice      uint64
@@ -108,7 +118,7 @@ func collectCPUStats() *Stats {
 		cpu.Total += val
 	}
 
-	// Since cpustat[CPUTIME_USER] includes cpustat[CPUTIME_GUEST], subtract duplicated values from total.
+	// Since cpustat[CPUTIME_USER] includes cpustat[CPUTIME_GUEST], subtract the duplicated values from total.
 	// https://github.com/torvalds/linux/blob/4ec9f7a18/kernel/sched/cputime.c#L151-L158
 	cpu.Total -= cpu.Guest
 	// cpustat[CPUTIME_NICE] includes cpustat[CPUTIME_GUEST_NICE]
