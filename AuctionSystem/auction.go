@@ -191,12 +191,12 @@ func (a *Auction) UpdateAuctionWinner(b Bid) (bool, uint64) {
 				a.CurrWinnerID = b.BidderID
 				a.LatestBidTime = b.BidTime
 				a.CurrWinnerName = b.BidderUsername
-				return true, b.BidderID
 			}
 
 		}
-		return false, 2
 	}
+	return true, b.BidderID
+
 }
 
 // Create bidding to be used to update the auction.

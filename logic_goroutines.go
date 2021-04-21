@@ -49,18 +49,18 @@ func testingFinal() {
 // 3 Main Functions for business logic usage.
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-func MakeBidMain(u *UserHashTable, h *AuctionHashTable, uid uint64, targetid uint64, placeVal uint64, bidId uint64, db *sql.DB) (bool, Auction, Bid) {
+func MakeBidMain(u *UserHashTable, h *AuctionHashTable, uid uint64, targetid uint64, placeVal uint64, bidId uint64, db *sql.DB) (uint64, Auction, Bid) {
 	currUser := *u.AccessUserHash(uid)
 	newBid := CreateBid(currUser, placeVal, time.Now().Format(time.RFC3339Nano))
 	target := h.AccessHashAuction(targetid)
 	go InsertBidToDB(newBid, targetid, db)
-	result, _ := target.UpdateAuctionWinner(newBid)
+	result, outcome := target.UpdateAuctionWinner(newBid)
 	if !result {
-		return false, *target, newBid
+		return outcome, *target, newBid
 	} else {
 		go UpdateAuctionInDB(*target, db)
 		go h.AuctionHashAccessUpdate(*target)
-		return true, *target, newBid
+		return outcome, *target, newBid
 	}
 }
 
