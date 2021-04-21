@@ -176,14 +176,14 @@ func CreateAuction(auctioneer User, initBid uint64, bidStep uint64, id uint64, d
 	return auction
 }
 
-func (a *Auction) UpdateAuctionWinner(b Bid) bool {
+func (a *Auction) UpdateAuctionWinner(b Bid) (bool, uint64) {
 	bidtime, err := time.Parse(time.RFC3339Nano, b.BidTime)
 	endtime, err2 := time.Parse(time.RFC3339Nano, a.EndTime)
 	if err != nil || err2 != nil {
-		return false
+		return false, 0
 	} else {
 		if bidtime.After(endtime) {
-			return false
+			return false, 1
 		}
 		if b.BidPrice > a.CurrMaxBid {
 			if (b.BidPrice - a.CurrMaxBid) >= a.BidStep {
@@ -191,9 +191,11 @@ func (a *Auction) UpdateAuctionWinner(b Bid) bool {
 				a.CurrWinnerID = b.BidderID
 				a.LatestBidTime = b.BidTime
 				a.CurrWinnerName = b.BidderUsername
+				return true, b.BidderID
 			}
+
 		}
-		return true
+		return false, 2
 	}
 }
 

@@ -69,9 +69,10 @@ func makeBidMain_test(u *UserHashTable, h *AuctionHashTable, uid uint64, targeti
 	bidResult := make(chan bool)
 	bidDur := make(chan time.Duration)
 	go insertBid_test(newBid, targetid, db, bidResult, bidDur)
-	fmt.Println("Insert Bid to DB:", <-bidDur)
+	// fmt.Println("Insert Bid to DB:", <-bidDur)
+	result, _ := target.UpdateAuctionWinner(newBid)
 
-	if !target.UpdateAuctionWinner(newBid) {
+	if result == false {
 		final := time.Now()
 		fmt.Println("makeBidMain_test() , losing bid :", final.Sub(init))
 
