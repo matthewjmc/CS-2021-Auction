@@ -185,11 +185,13 @@ func (a *Auction) UpdateAuctionWinner(b Bid) bool {
 		if bidtime.After(endtime) {
 			return false
 		}
-		if (b.BidPrice > a.CurrMaxBid) && (b.BidPrice-a.CurrMaxBid) >= a.BidStep {
-			a.CurrMaxBid = b.BidPrice
-			a.CurrWinnerID = b.BidderID
-			a.LatestBidTime = b.BidTime
-			a.CurrWinnerName = b.BidderUsername
+		if b.BidPrice > a.CurrMaxBid {
+			if (b.BidPrice - a.CurrMaxBid) >= a.BidStep {
+				a.CurrMaxBid = b.BidPrice
+				a.CurrWinnerID = b.BidderID
+				a.LatestBidTime = b.BidTime
+				a.CurrWinnerName = b.BidderUsername
+			}
 		}
 		return true
 	}
