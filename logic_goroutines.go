@@ -49,18 +49,26 @@ func testingFinal() {
 // 3 Main Functions for business logic usage.
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-func MakeBidMain(u *UserHashTable, h *AuctionHashTable, uid uint64, targetid uint64, placeVal uint64, bidId uint64, db *sql.DB) (uint64, Auction, Bid) {
+// MakeBidMain will return 2 outputs, the first will be the result of the bidding whether it updates the winner or not while
+// the second output will notates how the outcome is.
+
+// If outcome returns 0 , it refers that time.Parsing within the UpdateAuctionWinner method came to an error.
+// If outcome returns 1 , the newly made bid was being placed after the auction ended.
+// If outcome returns 2 , the newly made bid did not overcome the latest winning bid.
+// Else, outcome will return the latest new winner ID as its second output.
+
+func MakeBidMain(u *UserHashTable, h *AuctionHashTable, uid uint64, targetid uint64, placeVal uint64, bidId uint64, db *sql.DB) (bool, uint64) {
 	currUser := *u.AccessUserHash(uid)
 	newBid := CreateBid(currUser, placeVal, time.Now().Format(time.RFC3339Nano))
 	target := h.AccessHashAuction(targetid)
 	go InsertBidToDB(newBid, targetid, db)
 	result, outcome := target.UpdateAuctionWinner(newBid)
 	if !result {
-		return outcome, *target, newBid
+		return result, outcome
 	} else {
 		go UpdateAuctionInDB(*target, db)
 		go h.AuctionHashAccessUpdate(*target)
-		return outcome, *target, newBid
+		return result, outcome
 	}
 }
 

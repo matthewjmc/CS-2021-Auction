@@ -1,1 +1,0 @@
-"auction:Helloworld1@tcp(db.mcmullin.org)/auction_system"
