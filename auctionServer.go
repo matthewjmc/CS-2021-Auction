@@ -104,8 +104,8 @@ func requestHandle(con net.Conn, wg *sync.WaitGroup) { //Check make Sure other t
 		}
 
 		if received.Command == "create" {
-			// aucID := received.Data.Value
-			aucID := _generateAucID()
+			aucID := received.Data.Value[2]
+			//aucID := _generateAucID()
 			state, _ := AuctionSystem.CreateAuctionMain(U, A, received.UserID, aucID, received.Data.Value[0], received.Data.Value[1], 1*time.Hour, "Demo")
 			// fmt.Println(received.Time)
 			// fmt.Println(received)
