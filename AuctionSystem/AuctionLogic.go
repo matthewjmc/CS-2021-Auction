@@ -101,9 +101,9 @@ func MakeBidMain(u *UserHashTable, h *AuctionHashTable, uid uint64, targetid uin
 		currUser := *u.AccessUserHash(uid)
 		newBid := CreateBid(currUser, placeVal, bidTime)
 		target := h.AccessHashAuction(targetid)
-		target.UpdateAuctionWinner(newBid)
+		_, state := target.UpdateAuctionWinner(newBid)
 		h.AuctionHashAccessUpdate(*target)
-		return true, 0 // code 0 . the bid has been made and updated properly.
+		return state, 0 // code 0 . the bid has been made and updated properly.
 	}
 }
 

@@ -21,7 +21,7 @@ type Package struct { // Data Sent and Received From user
 	Command   string
 	Data      struct {
 		Item  string
-		Value uint64
+		Value []uint64
 	}
 	Time []time.Time
 }
@@ -33,6 +33,8 @@ type Temp struct {
 
 type Auction struct { //Auctions Running at one time
 	AuctionID        uint64
+	CurPrice         uint64
+	StepSize         uint64
 	ConnectedClients []net.Conn
 }
 
@@ -75,9 +77,9 @@ func serverInit() {
 			log.Println(err)
 			return
 		}
-		wg.Add(1)
+		// wg.Add(1)
 		go requestHandle(con, &wg)
-		wg.Wait()
+		// wg.Wait()
 	}
 }
 
@@ -90,6 +92,7 @@ func requestHandle(con net.Conn, wg *sync.WaitGroup) { //Check make Sure other t
 		n, err := con.Read(buffer)
 		rawdata := string(buffer[:n])
 		if err != nil {
+			removeUser(con, received.AuctionID)
 			fmt.Println(err)
 		}
 
@@ -101,23 +104,26 @@ func requestHandle(con net.Conn, wg *sync.WaitGroup) { //Check make Sure other t
 		}
 
 		if received.Command == "create" {
-			aucID := received.Data.Value
-			// aucID := _generateAucID()
-			state, _ := AuctionSystem.CreateAuctionMain(U, A, received.UserID, aucID, 100, 25, 1*time.Hour, "Demo")
+			// aucID := received.Data.Value
+			aucID := _generateAucID()
+			state, _ := AuctionSystem.CreateAuctionMain(U, A, received.UserID, aucID, received.Data.Value[0], received.Data.Value[1], 1*time.Hour, "Demo")
 			// fmt.Println(received.Time)
 			// fmt.Println(received)
 			if state {
 				tmp := Package{}
 				tmp.Data.Item = "AuctionID"
-				tmp.Data.Value = aucID
+				tmp.Data.Value = []uint64{aucID}
 				tmp.Command = "AucCreated"
-
 				tmp.Time = received.Time
+				hashTable[aucID] = Auction{
+					AuctionID: aucID,
+					CurPrice:  received.Data.Value[0],
+					StepSize:  received.Data.Value[1],
+				}
 
 				var jsonData []byte
 				jsonData, err = json.Marshal(tmp)
 				returnData(con, string(jsonData))
-				wg.Done()
 			} else {
 				fmt.Println("Unable to Add Auction")
 			}
@@ -126,11 +132,13 @@ func requestHandle(con net.Conn, wg *sync.WaitGroup) { //Check make Sure other t
 			state, _ := AuctionSystem.CreateUserMain(U, received.UserID, "Demo")
 			defer removeUser(con, received.AuctionID)
 			if state {
-				addUsr(con, received.AuctionID, received.UserID)
-				wg.Done()
+				wg.Add(1)
+				addUsr(con, received.AuctionID, received.UserID, wg)
+				wg.Wait()
 				loggedIn = true
 				tmp := Package{}
 				tmp.Command = "Success"
+				tmp.Data.Value = []uint64{hashTable[received.AuctionID].StepSize}
 				//tmp.Time = append(received.Time, time.Now()) //test join time
 				//tmp.Time = append(received.Time) //test join round time
 
@@ -139,13 +147,13 @@ func requestHandle(con net.Conn, wg *sync.WaitGroup) { //Check make Sure other t
 				returnData(con, string(jsonData))
 				go _updateUsers(received.AuctionID, received.UserID)
 			} else {
-				fmt.Println("Unable to Create User")
+				fmt.Println("User already in the System")
 			}
 
 		} else if loggedIn {
 			switch received.Command {
 			case "bid":
-				state, err := AuctionSystem.MakeBidMain(U, A, received.UserID, received.AuctionID, received.Data.Value)
+				state, err := AuctionSystem.MakeBidMain(U, A, received.UserID, received.AuctionID, received.Data.Value[0])
 				if err != 0 {
 					switch err {
 					case 1:
@@ -153,8 +161,20 @@ func requestHandle(con net.Conn, wg *sync.WaitGroup) { //Check make Sure other t
 					case 2:
 						fmt.Println("Auction Not Found in System")
 					}
+				} else if !state {
+					var temp Package
+					temp.Command = "invalidBid"
+					temp.AuctionID = received.AuctionID
+					jsonData, err := json.Marshal(temp)
+					if err != nil {
+						fmt.Println(err)
+					}
+					returnData(con, string(jsonData))
 				} else if state {
-					go _updateClient(received.AuctionID, received.UserID, received.Data.Value, received.Time)
+					temp := hashTable[received.AuctionID]
+					temp.CurPrice = received.Data.Value[0]
+					hashTable[received.AuctionID] = temp
+					go _updateClient(received.AuctionID, received.UserID, received.Data.Value[0], received.Time)
 				}
 			}
 		}
@@ -165,7 +185,7 @@ func returnData(con net.Conn, data string) {
 	fmt.Fprintf(con, string(data)+"\n")
 }
 
-func addUsr(con net.Conn, aID uint64, uID uint64) {
+func addUsr(con net.Conn, aID uint64, uID uint64, wg *sync.WaitGroup) {
 	if _aucExists(aID) {
 		temp := hashTable[aID]
 		temp.ConnectedClients = append(temp.ConnectedClients, con)
@@ -178,6 +198,7 @@ func addUsr(con net.Conn, aID uint64, uID uint64) {
 		hashTable[aID] = temp
 	}
 	fmt.Println("Number of Rooms Currently", len(hashTable))
+	wg.Done()
 }
 
 func _aucExists(aID uint64) bool {
@@ -194,7 +215,7 @@ func _updateClient(aID uint64, uID uint64, price uint64, sTime []time.Time) {
 		temp.UserID = uID
 		temp.Command = "curPrice"
 		temp.AuctionID = aID
-		temp.Data.Value = price
+		temp.Data.Value = []uint64{price}
 		temp.Time = append(sTime, time.Now())
 		jsonData, err := json.Marshal(temp)
 		if err != nil {
@@ -215,6 +236,7 @@ func _updateUsers(aID uint64, uID uint64) {
 		temp.Command = "usrjoin"
 		temp.UserID = uID
 		temp.AuctionID = aID
+		temp.Data.Value = []uint64{hashTable[aID].CurPrice}
 		jsonData, err := json.Marshal(temp)
 		if err != nil {
 			log.Println(err)
@@ -254,7 +276,7 @@ func dbUpdate(db *sql.DB, done chan bool) {
 		case <-done:
 			return
 		case <-ticker.C:
-			fmt.Println("Pushing to DB")
+			//fmt.Println("Pushing to DB")
 			for aucID, _ := range hashTable {
 				data := AuctionSystem.AccessHashAuctionCalling(A, aucID)
 				if data != nil {
@@ -301,7 +323,7 @@ func dbUpdate(db *sql.DB, done chan bool) {
 					}
 				}
 			}
-			fmt.Println("Done pushing DB")
+			//fmt.Println("Done pushing DB")
 		}
 	}
 }

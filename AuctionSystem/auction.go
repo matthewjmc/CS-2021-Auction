@@ -226,10 +226,10 @@ func CreateAuction(auctioneer User, initBid uint64, bidStep uint64, id uint64, d
 	return result
 }
 
-func (a *Auction) UpdateAuctionWinner(b Bid) string {
-
+func (a *Auction) UpdateAuctionWinner(b Bid) (string, bool) {
+	state := false
 	if b.bidTime > a.EndTime {
-		return "The auction has already ended"
+		return "The auction has already ended", state
 	}
 
 	if (b.bidPrice > a.CurrMaxBid) && (b.bidPrice-a.CurrMaxBid) >= a.BidStep {
@@ -237,12 +237,13 @@ func (a *Auction) UpdateAuctionWinner(b Bid) string {
 		a.CurrWinnerID = b.bidderID
 		a.LatestBidTime = b.bidTime
 		a.CurrWinnerName = b.bidderUsername
+		state = true
 	}
 
 	time.Sleep(1 * time.Millisecond)
 	report := fmt.Sprint(a.CurrWinnerID) + "is now the winner of auction" + fmt.Sprint(a.AuctionID)
 
-	return report
+	return report, state
 }
 
 // Create bidding to be used to update the auction.
