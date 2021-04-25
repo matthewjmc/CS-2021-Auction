@@ -30,7 +30,7 @@ func main() {
 	defer client.Close()
 	for {
 		data := Usage()
-		fmt.Println(data)
+		//fmt.Println(data)
 		val, err := client.Get("1").Result()
 		if err != nil {
 			fmt.Println(err)
@@ -44,18 +44,19 @@ func main() {
 
 }
 
-func Usage() (data string) {
+func Usage() (data float64) {
 	before := collectCPUStats()
 
-	time.Sleep(time.Duration(30) * time.Millisecond)
+	time.Sleep(time.Duration(1) * time.Second)
 	after := collectCPUStats()
 
 	total := float64(after.Total - before.Total)
 	idle := float64(after.Idle-before.Idle) / total * 100
 
-	vs := strconv.FormatFloat(float64(idle), 'f', 2, 64)
-	fmt.Println("cpu idle:", vs)
-	return vs
+	//vs := strconv.FormatFloat(float64(idle), 'f', 2, 64)
+	//fmt.Println(reflect.TypeOf(vs))
+	fmt.Println("cpu idle:", idle)
+	return idle
 }
 
 // Stats represents cpu statistics for linux
