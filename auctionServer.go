@@ -67,8 +67,8 @@ func serverInit() {
 	db.SetMaxOpenConns(200000)
 	db.SetMaxIdleConns(200000)
 	//AutoUpdate
-	done := make(chan bool)
-	go dbUpdate(db, done)
+	//done := make(chan bool)
+	//go dbUpdate(db, done)
 	defer ticker.Stop()
 	for {
 		con, err := stream.Accept()
@@ -77,9 +77,9 @@ func serverInit() {
 			log.Println(err)
 			return
 		}
-		// wg.Add(1)
+		wg.Add(1)
 		go requestHandle(con, &wg)
-		// wg.Wait()
+		wg.Wait()
 	}
 }
 
@@ -105,7 +105,7 @@ func requestHandle(con net.Conn, wg *sync.WaitGroup) { //Check make Sure other t
 
 		if received.Command == "create" {
 			aucID := received.Data.Value[2]
-			//aucID := _generateAucID()
+			// aucID := _generateAucID()
 			state, _ := AuctionSystem.CreateAuctionMain(U, A, received.UserID, aucID, received.Data.Value[0], received.Data.Value[1], 1*time.Hour, "Demo")
 			// fmt.Println(received.Time)
 			// fmt.Println(received)
@@ -124,6 +124,7 @@ func requestHandle(con net.Conn, wg *sync.WaitGroup) { //Check make Sure other t
 				var jsonData []byte
 				jsonData, err = json.Marshal(tmp)
 				returnData(con, string(jsonData))
+				wg.Done()
 			} else {
 				fmt.Println("Unable to Add Auction")
 			}
@@ -132,14 +133,15 @@ func requestHandle(con net.Conn, wg *sync.WaitGroup) { //Check make Sure other t
 			state, _ := AuctionSystem.CreateUserMain(U, received.UserID, "Demo")
 			defer removeUser(con, received.AuctionID)
 			if state {
-				wg.Add(1)
-				addUsr(con, received.AuctionID, received.UserID, wg)
-				wg.Wait()
+				//wg.Add(1)
+				addUsr(con, received.AuctionID, received.UserID)
+				//wg.Wait()
+				wg.Done()
 				loggedIn = true
 				tmp := Package{}
 				tmp.Command = "Success"
 				tmp.Data.Value = []uint64{hashTable[received.AuctionID].StepSize}
-				//tmp.Time = append(received.Time, time.Now()) //test join time
+				tmp.Time = append(received.Time, time.Now()) //test join time
 				//tmp.Time = append(received.Time) //test join round time
 
 				var jsonData []byte
@@ -148,6 +150,7 @@ func requestHandle(con net.Conn, wg *sync.WaitGroup) { //Check make Sure other t
 				go _updateUsers(received.AuctionID, received.UserID)
 			} else {
 				fmt.Println("User already in the System")
+				wg.Done()
 			}
 
 		} else if loggedIn {
@@ -165,6 +168,7 @@ func requestHandle(con net.Conn, wg *sync.WaitGroup) { //Check make Sure other t
 					var temp Package
 					temp.Command = "invalidBid"
 					temp.AuctionID = received.AuctionID
+					temp.Time = append(received.Time, time.Now())
 					jsonData, err := json.Marshal(temp)
 					if err != nil {
 						fmt.Println(err)
@@ -185,7 +189,8 @@ func returnData(con net.Conn, data string) {
 	fmt.Fprintf(con, string(data)+"\n")
 }
 
-func addUsr(con net.Conn, aID uint64, uID uint64, wg *sync.WaitGroup) {
+func addUsr(con net.Conn, aID uint64, uID uint64) {
+	//defer wg.Done()
 	if _aucExists(aID) {
 		temp := hashTable[aID]
 		temp.ConnectedClients = append(temp.ConnectedClients, con)
@@ -198,7 +203,6 @@ func addUsr(con net.Conn, aID uint64, uID uint64, wg *sync.WaitGroup) {
 		hashTable[aID] = temp
 	}
 	fmt.Println("Number of Rooms Currently", len(hashTable))
-	wg.Done()
 }
 
 func _aucExists(aID uint64) bool {
@@ -276,11 +280,7 @@ func dbUpdate(db *sql.DB, done chan bool) {
 		case <-done:
 			return
 		case <-ticker.C:
-			//fmt.Println("Pushing to DB")
-			for aucID, _ := range hashTable {
-				data := AuctionSystem.AccessHashAuctionCalling(A, aucID)
-				if data != nil {
-					query := `INSERT INTO auction(aucID,userID,itemName,currWinnerID,currWinnerName,currMaxBid,bidStep,latestBidTime,startTime,endTime) 
+			query := `INSERT INTO auction(aucID,userID,itemName,currWinnerID,currWinnerName,currMaxBid,bidStep,latestBidTime,startTime,endTime) 
 							values(?,?,?,?,?,?,?,?,?,?)
 							ON DUPLICATE KEY UPDATE 
 							aucID=?,
@@ -293,10 +293,13 @@ func dbUpdate(db *sql.DB, done chan bool) {
 							latestBidTime=?,
 							startTime=?,
 							endTime=?`
-					stmt, err := db.Prepare(query)
-					if err != nil {
-						fmt.Println("Prepare Error:", err)
-					}
+			stmt, err := db.Prepare(query)
+			if err != nil {
+				fmt.Println("Prepare Error:", err)
+			}
+			for aucID := range hashTable {
+				data := AuctionSystem.AccessHashAuctionCalling(A, aucID)
+				if data != nil {
 					_, err = stmt.Exec(
 						data.AuctionID,
 						data.AuctioneerID,

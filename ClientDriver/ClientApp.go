@@ -17,15 +17,20 @@ type Package struct {
 	Command   string
 	Data      struct {
 		Item  string
-		Value uint64
+		Value []uint64
 	}
 }
+
+var serverIP = "load.mcmullin.org:19530"
 
 func main() {
 	data := Package{}
 	var userIn uint64
 	var aID uint64
 	var uID uint64
+	var initPrice uint64
+	var stepSize uint64
+	var returnVal Package
 	fmt.Println("Please Enter User ID:")
 	fmt.Scanf("%d", &uID)
 	fmt.Println("\nWhat Would you like to do?\n\t1--> Create an Auction\n\t2--> Join an Auction")
@@ -33,17 +38,26 @@ func main() {
 	switch userIn {
 	case 1:
 		data.Command = "create"
+		data.UserID = uID
+		fmt.Println("What would you like starting price to be?")
+		fmt.Scanf("%d", &initPrice)
+		fmt.Println("Step size for the bidding to be?")
+		fmt.Scanf("%d", &stepSize)
+		data.Data.Value = []uint64{initPrice, stepSize}
 		fmt.Println("Creating Auction!!!")
+		returnVal = handleCon(data)
 	case 2:
 		data.Command = "join"
+		data.UserID = uID
 		fmt.Println("Please Enter Auction To Join:")
 		fmt.Scanf("%d", &aID)
+		data.AuctionID = aID
 
 	}
-	returnVal := handleCon(data)
+	//fmt.Println(data)
 	if returnVal.Command == "AucCreated" {
 		data = Package{}
-		data.AuctionID = returnVal.Data.Value
+		data.AuctionID = returnVal.Data.Value[0]
 		data.UserID = uID
 		data.Command = "join"
 		//fmt.Println(data)
@@ -64,7 +78,7 @@ func main() {
 
 func handleCon(data Package) Package {
 	received := Package{}
-	connection, _ := net.Dial("tcp4", "167.99.67.7:19530")
+	connection, _ := net.Dial("tcp4", serverIP)
 	defer connection.Close()
 	err := connection.(*net.TCPConn).SetKeepAlive(true)
 	if err != nil {
@@ -84,7 +98,8 @@ func handleCon(data Package) Package {
 }
 
 func openCon(data Package) {
-	connection, _ := net.Dial("tcp4", "167.99.67.7:19530")
+	var stepSize uint64
+	connection, _ := net.Dial("tcp4", serverIP)
 	defer connection.Close()
 	err := connection.(*net.TCPConn).SetKeepAlive(true)
 	if err != nil {
@@ -95,12 +110,16 @@ func openCon(data Package) {
 		fmt.Println(err)
 	}
 	fmt.Fprintf(connection, string(jsonify(data))+"\n")
+
+	temp := recData(connection)
+	if temp.Command == "Success" {
+		stepSize = temp.Data.Value[0]
+	}
+
 	go readInput(connection, data.AuctionID, data.UserID)
 	for {
 		received := Package{}
-		//fmt.Println("Waiting For Data")
 		rawdata, err := bufio.NewReader(connection).ReadString('\n')
-		//fmt.Println(rawdata)
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -108,11 +127,15 @@ func openCon(data Package) {
 		json.Unmarshal([]byte(rawdata), &received)
 		if received.Command == "usrjoin" {
 			clearScreen()
-			fmt.Printf("User %d has Joined Room No.%d\n", received.UserID, received.AuctionID)
+			fmt.Printf("User %d has Joined Room No.%d\nBid Step Size -->\t%d\nCurrent Price ----->\t%d\n", received.UserID, received.AuctionID, stepSize, received.Data.Value[0])
 		} else if received.Command == "curPrice" {
 			clearScreen()
 			fmt.Printf("Room No.%d\n", received.AuctionID)
-			fmt.Printf("Current Price -----> %d\n", received.Data.Value)
+			fmt.Printf("Bid Step Size -->\t%d\nCurrent Price ----->\t%d\n", stepSize, received.Data.Value[0])
+		} else if received.Command == "invalidBid" {
+			clearScreen()
+			fmt.Printf("Room No.%d\nBid Step Size -->%d\n", received.AuctionID, stepSize)
+			fmt.Println("Please Place a Valid Bid")
 		}
 	}
 
@@ -127,6 +150,16 @@ func jsonify(data Package) []byte {
 	return jsonData
 }
 
+func recData(connection net.Conn) Package {
+	received := Package{}
+	rawdata, err := bufio.NewReader(connection).ReadString('\n')
+	if err != nil {
+		fmt.Println(err)
+	}
+	json.Unmarshal([]byte(rawdata), &received)
+	return received
+}
+
 func readInput(con net.Conn, aID uint64, uID uint64) {
 	temp := Package{}
 	temp.UserID = uID
@@ -136,7 +169,7 @@ func readInput(con net.Conn, aID uint64, uID uint64) {
 	for {
 		var price uint64
 		fmt.Scanf("%d", &price)
-		temp.Data.Value = price
+		temp.Data.Value = []uint64{price}
 		jsondata := jsonify(temp)
 		clearScreen()
 		fmt.Fprintf(con, string(jsondata)+"\n")
