@@ -2,7 +2,6 @@ package main
 
 // Locate on backend servers 1 and 2 to get cpu stat and send to the redis directly without
 // passing the load balancer to reduce latency
-
 import (
 	"bufio"
 	"encoding/json"
@@ -53,8 +52,6 @@ func Usage() (data float64) {
 	total := float64(after.Total - before.Total)
 	idle := float64(after.Idle-before.Idle) / total * 100
 
-	//vs := strconv.FormatFloat(float64(idle), 'f', 2, 64)
-	//fmt.Println(reflect.TypeOf(vs))
 	fmt.Println("cpu idle:", idle)
 	return idle
 }

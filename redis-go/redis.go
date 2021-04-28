@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"time"
 
-	rv "load_balance/reverseproxy"
+	rv "RV/ReverseProxy"
 
 	"github.com/go-redis/redis"
 )
@@ -32,33 +32,13 @@ func CommandFunction(cmd rv.Package) (string, rv.Package) {
 	temp := rv.Package{}
 	if cmd.Command == "create" {
 		IP, Init := KeyGen(cmd)
-		//fmt.Println("keygen")
 		return IP, Init
 	} else if cmd.Command == "join" {
-		//fmt.Println("join")
 		temp_key := strconv.FormatUint(cmd.AuctionID, 10)
 		IP, Init := RequestConnection(temp_key, cmd)
 		return IP, Init
 	}
 	return "NULL", temp
-}
-
-// set auctionID or key to auction struct input
-func SetKey(key string, value interface{}) (key1 string) {
-	client := redis.NewClient(&redis.Options{
-		Addr:     "10.104.0.11: 80",
-		Password: "",
-		DB:       0,
-	})
-	entry, err := json.Marshal(value)
-	if err != nil {
-		fmt.Println(err)
-	}
-	err = client.Set(key, entry, 0).Err()
-	if err != nil {
-		fmt.Println(err)
-	}
-	return key
 }
 
 func getToken() uint64 {
@@ -78,15 +58,6 @@ func KeyGen(init rv.Package) (key string, data rv.Package) {
 		Password: "",
 		DB:       0,
 	})
-	// temp, err := client.Keys("*").Result()
-	// if err != nil {
-	// 	fmt.Println(err)
-	// }
-	// var count = len(temp)
-	// //fmt.Println(count)
-	// var newkey = count + 1
-	// key1 := strconv.Itoa(newkey)
-	// //fmt.Println(key1, reflect.TypeOf(key1))
 	newkey := getToken()
 	key1 := strconv.FormatUint(newkey, 10)
 
@@ -106,7 +77,6 @@ func KeyGen(init rv.Package) (key string, data rv.Package) {
 
 	//set IP address to that key
 	if S1_Usage > S2_Usage {
-		//fmt.Println("IF")
 		value.AddressIP = "10.104.0.9:19530"
 		value.ConnectedClients = 0
 		entry, err := json.Marshal(value)
@@ -118,7 +88,6 @@ func KeyGen(init rv.Package) (key string, data rv.Package) {
 			fmt.Println(err)
 		}
 	} else if S2_Usage > S1_Usage {
-		//fmt.Println("ELSEIF")
 		value.AddressIP = "10.104.0.8:19530"
 		value.ConnectedClients = 0
 		entry, err := json.Marshal(value)
@@ -130,7 +99,6 @@ func KeyGen(init rv.Package) (key string, data rv.Package) {
 			fmt.Println(err)
 		}
 	} else {
-		//fmt.Println("Else")
 		value.AddressIP = "10.104.0.9:19530"
 		value.ConnectedClients = 0
 		entry, err := json.Marshal(value)
@@ -142,12 +110,8 @@ func KeyGen(init rv.Package) (key string, data rv.Package) {
 			fmt.Println(err)
 		}
 	}
-
-	//fmt.Println(value.AddressIP)
 	client.Close()
 	init.Data.Value = newkey
-	//fmt.Println(uint64(newkey))
-	//go rv.ReProx(Inconn, value.AddressIP, init)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -167,20 +131,14 @@ func RequestConnection(key string, init rv.Package) (string, rv.Package) { //(ip
 	}
 	src := Auction{}
 	err = json.Unmarshal([]byte(val), &src)
-	//fmt.Println(val)
 	if err != nil {
 		log.Fatal(err)
 	}
-	//fmt.Println(src.AddressIP)
 	client.Close()
-	//rv.ReProx(Inconn, src.AddressIP, init)
 	if err != nil {
 		fmt.Println(err)
 	}
 	return src.AddressIP, init
-	// Inconn.Close()
-	//fmt.Println("done")
-	//return src.AddressIP
 }
 
 // update numbers of connected users and pass to reverse proxy

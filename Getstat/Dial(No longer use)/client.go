@@ -2,7 +2,6 @@ package main
 
 // Locate on the load balance
 // Changed and remove from the load balance to reduce time needed for the query and insert
-
 import (
 	"bufio"
 	"encoding/json"
@@ -28,35 +27,10 @@ func main() {
 	if err != nil {
 		fmt.Println(err)
 	}
-	//for {
-	//fmt.Println("top")
 	go GetStat(ln1)
 	fmt.Println("Start Getstat")
 	GetStat(ln2)
-	//fmt.Println("Bottom")
-	//}
-	//time.Sleep(1000 * time.Second)
-
 }
-
-// update numbers of connected users and pass to reverse proxy
-// func UpdateUsage(id string, value float64) {
-// 	client := redis.NewClient(&redis.Options{
-// 		Addr:     "localhost: 6379",
-// 		Password: "",
-// 		DB:       0,
-// 	})
-// 	val, err := client.Get(id).Result()
-// 	if err != nil {
-// 		fmt.Println(err)
-// 	}
-// 	src := Data{}
-// 	err = json.Unmarshal([]byte(val), &src)
-// 	newval := value
-// 	entry, err := json.Marshal(newval)
-// 	client.Set(id, entry, 0)
-// 	client.Close()
-// }
 
 func GetStat(conn net.Conn) {
 	defer conn.Close()
@@ -77,7 +51,6 @@ func GetStat(conn net.Conn) {
 		}
 
 		usage := string(netData)
-		//fmt.Println(usage)
 		if usage[12] == 116 {
 			re := regexp.MustCompile(`[-]?\d[\d,]*[\.]?[\d{2}]*`)
 			submatchall := re.FindAllString(usage, -1)
@@ -100,7 +73,6 @@ func GetStat(conn net.Conn) {
 				entry, err := json.Marshal(Usage)
 				client.Set("2", entry, 0)
 			}
-			// fmt.Println(Usage)
 		}
 		if usage[12] == 111 {
 			re := regexp.MustCompile(`[-]?\d[\d,]*[\.]?[\d{2}]*`)
@@ -125,10 +97,6 @@ func GetStat(conn net.Conn) {
 				client.Set("1", entry, 0)
 			}
 		}
-		//fmt.Println(Usage)
-		// t := time.Now()
-		// myTime := t.Format(time.RFC3339) + "\n"
-		// conn.Write([]byte(myTime))
 	}
 
 }
